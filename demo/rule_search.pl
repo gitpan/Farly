@@ -1,0 +1,67 @@
+use strict;
+use warnings;
+
+use Farly;
+
+# specify the actual firewall configuration here
+
+my $file = "firewall_config.txt";
+
+# create the configuration file importer
+
+my $importer = Farly->new();
+
+# call the process method in order to obtain
+# an Object::KVC::List<Object::KVC::Hash> firewall 
+# device model
+
+my $container = $importer->process("ASA",$file);
+
+# create a rule expander object which will be
+# used to obtain an Object::KVC::List<Object::KVC::Hash> 
+# container with all of the firewalls raw rule entries
+# (same as "show access-list" on a Cisco ASA firewall)
+
+use Farly::Rules;
+
+my $rule_expander = Farly::Rules->new( $container );
+
+# get the raw rule entries
+
+my $expanded_rules = $rule_expander->expand_all();
+
+# create a search object
+# you don't have to specify all possible properties
+# only the ones you're interested in
+# protocol's and port's must be the integer value (6 = tcp)
+
+my $telnet = Object::KVC::Hash->new();
+
+$telnet->set( "ACTION",   Object::KVC::String->new("permit") );
+$telnet->set( "PROTOCOL", Farly::Transport::Protocol->new(6) );
+$telnet->set( "SRC_IP",   Farly::IPv4::Network->new("0.0.0.0 0.0.0.0") );
+$telnet->set( "DST_PORT", Farly::Transport::Port->new(23) );
+
+# create a container to put the search result in
+# (this allows the results of multiple searches to go in the
+# same container, if needed)
+
+my $search_result = Object::KVC::List->new();
+
+# do the search
+
+$expanded_rules->search( $telnet, $search_result );
+
+# create a template class to convert the search result
+# into ASA format
+
+use Farly::ASA::Template;
+
+my $template = Farly::ASA::Template->new();
+
+# print the search results
+
+foreach my $rule_object ( $search_result->iter() ) {
+	$template->as_string( $rule_object );
+	print "\n"; 
+}
