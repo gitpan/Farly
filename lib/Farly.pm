@@ -9,7 +9,7 @@ use File::Spec;
 use Log::Log4perl qw(get_logger);
 use Farly::Director;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 our ($volume,$dir,$file) = File::Spec->splitpath( $INC{'Farly.pm'} );
 Log::Log4perl::init( $volume.$dir.'Farly/Log/Farly.conf');
@@ -74,7 +74,7 @@ __END__
 
 =head1 NAME
 
-Farly - Farly factory class
+Farly - Firewall Analysis and Rewrite Library
 
 =head1 DESCRIPTION
 
@@ -101,7 +101,7 @@ Farly dies on error.
 
 =head2 new()
  
- The constructor. No arguments required.
+The constructor. No arguments required.
  
 =head2 process( <firewall type>, <configuration file>)
 
@@ -109,8 +109,8 @@ Farly dies on error.
 
 Returns Object::KVC::List<Object::KVC::Hash> firewall device model.
  
- Valid firewall types:
- 	ASA  - Cisco ASA firewall
+Valid firewall types:
+ ASA  - Cisco ASA firewall
 
 =head1 COPYRIGHT AND LICENCE
 

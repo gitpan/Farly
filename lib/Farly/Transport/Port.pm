@@ -7,7 +7,7 @@ use Carp;
 use Farly::Transport::Object;
 
 our @ISA = qw(Farly::Transport::Object);
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
 	my ( $class, $port ) = @_;
@@ -66,7 +66,7 @@ __END__
 
 =head1 NAME
 
-Farly::Transport::Port - IPv4 address class
+Farly::Transport::Port - TCP or UDP port number class
 
 =head1 DESCRIPTION
 

@@ -35,12 +35,12 @@ my $expanded_rules = $rule_expander->expand_all();
 # only the ones you're interested in
 # protocol's and port's must be the integer value (6 = tcp)
 
-my $telnet = Object::KVC::Hash->new();
+my $web = Object::KVC::Hash->new();
 
-$telnet->set( "ACTION",   Object::KVC::String->new("permit") );
-$telnet->set( "PROTOCOL", Farly::Transport::Protocol->new(6) );
-$telnet->set( "SRC_IP",   Farly::IPv4::Network->new("0.0.0.0 0.0.0.0") );
-$telnet->set( "DST_PORT", Farly::Transport::Port->new(23) );
+$web->set( "ACTION",   Object::KVC::String->new("permit") );
+$web->set( "PROTOCOL", Farly::Transport::Protocol->new(6) );
+$web->set( "SRC_IP",   Farly::IPv4::Network->new("0.0.0.0 0.0.0.0") );
+$web->set( "DST_PORT", Farly::Transport::Port->new(80) );
 
 # create a container to put the search result in
 # (this allows the results of multiple searches to go in the
@@ -50,7 +50,13 @@ my $search_result = Object::KVC::List->new();
 
 # do the search
 
-$expanded_rules->search( $telnet, $search_result );
+$expanded_rules->search( $web, $search_result );
+
+# or public tcp/80 access
+# $expanded_rules->matches( $web, $search_result );
+
+# or all rules permitting access to tcp/80
+# $expanded_rules->contains( $web, $search_result );
 
 # create a template class to convert the search result
 # into ASA format

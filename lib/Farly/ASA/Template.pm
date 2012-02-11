@@ -11,7 +11,7 @@ use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our ( $volume, $dir, $file ) = File::Spec->splitpath( $INC{'Farly/ASA/Template.pm'} );
 
 sub new {

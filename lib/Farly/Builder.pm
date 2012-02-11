@@ -17,7 +17,7 @@ use Object::KVC::HashRef;
 use Object::KVC::Set;
 use Object::KVC::String;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
 	my $class  = shift;
