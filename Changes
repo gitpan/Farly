@@ -3,3 +3,6 @@
 
 0.02 - February 2012
   - Fixed documentation mistakes
+
+0.03 - 12 February, 2012
+  - Fixed Makefile.PL error

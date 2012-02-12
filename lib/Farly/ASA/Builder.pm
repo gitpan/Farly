@@ -14,7 +14,7 @@ use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our @ISA = 'Farly::Builder';
 
 sub new {
