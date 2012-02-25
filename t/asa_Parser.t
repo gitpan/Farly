@@ -38,9 +38,13 @@ $string = q{name 192.168.10.0 net1 description This is a test};
 $tree   = $parser->parse($string);
 $actual = visit($tree);
 
-$expected = { 'names' => '192.168.10.0' };
+$expected = {
+	'ip'          => '192.168.10.0',
+	'name'        => 'net1',
+	'description' => 'This is a test'
+};
 
-ok( equals( $expected, $actual ), "test" );
+ok( equals( $expected, $actual ), "name" );
 
 #
 # interface nameif
@@ -102,7 +106,6 @@ $expected = {
 
 ok( equals( $expected, $actual ), "interface security-level" );
 
-
 #
 # object host
 #
@@ -116,13 +119,12 @@ $tree   = $parser->parse($string);
 $actual = visit($tree);
 
 $expected = {
-	'object_host'    => '192.168.5.219',
-	'object'         => 'network',
-	'object_id'      => 'TestFW'
+	'object_host' => '192.168.5.219',
+	'object'      => 'network',
+	'object_id'   => 'TestFW'
 };
 
 ok( equals( $expected, $actual ), "object host" );
-
 
 #
 # object subnet
@@ -141,10 +143,9 @@ $expected = {
 	'object'         => 'network',
 	'object_id'      => 'test_net1'
 };
-        
+
 ok( equals( $expected, $actual ), "object subnet" );
 
- 
 #
 # object range
 #
@@ -158,13 +159,12 @@ $tree   = $parser->parse($string);
 $actual = visit($tree);
 
 $expected = {
-	'object_range'   => '10.1.2.13 10.1.2.28',
-	'object'         => 'network',
-	'object_id'      => 'test_net1_range'
+	'object_range' => '10.1.2.13 10.1.2.28',
+	'object'       => 'network',
+	'object_id'    => 'test_net1_range'
 };
-        
-ok( equals( $expected, $actual ), "object range" );
 
+ok( equals( $expected, $actual ), "object range" );
 
 #
 # object service src dst
@@ -353,7 +353,8 @@ ok( equals( $expected, $actual ), "object-group service" );
 # access-list 1
 #
 
-$string = q{access-list acl-outside permit tcp OG_NETWORK customerX range 1024 65535 host server1 eq 80};
+$string =
+q{access-list acl-outside permit tcp OG_NETWORK customerX range 1024 65535 host server1 eq 80};
 
 $tree   = $parser->parse($string);
 $actual = visit($tree);
@@ -374,7 +375,8 @@ ok( equals( $expected, $actual ), "access-list 1" );
 # access-list 2
 #
 
-$string = q{access-list acl-outside line 1 extended permit ip host server1 eq 1024 any eq 80};
+$string =
+q{access-list acl-outside line 1 extended permit ip host server1 eq 1024 any eq 80};
 
 $tree   = $parser->parse($string);
 $actual = visit($tree);
@@ -397,7 +399,8 @@ ok( equals( $expected, $actual ), "access-list 2" );
 # access-list 3
 #
 
-$string = q{access-list acl-outside permit tcp OG_NETWORK customerX OG_SERVICE high_ports host server1 eq 80};
+$string =
+q{access-list acl-outside permit tcp OG_NETWORK customerX OG_SERVICE high_ports host server1 eq 80};
 
 $tree   = $parser->parse($string);
 $actual = visit($tree);
@@ -418,19 +421,20 @@ ok( equals( $expected, $actual ), "access-list 3" );
 # access-list 4
 #
 
-$string = q{access-list acl-outside permit OG_SERVICE srv2 OG_NETWORK customerX OG_SERVICE high_ports host server1 eq 80};
+$string =
+q{access-list acl-outside permit OG_SERVICE srv2 OG_NETWORK customerX OG_SERVICE high_ports host server1 eq 80};
 
 $tree   = $parser->parse($string);
 $actual = visit($tree);
 
 $expected = {
-	'acl_action'        => 'permit',
-	'acl_id'            => 'acl-outside',
-	'acl_dst_port'      => '80',
-	'acl_src_port'      => 'high_ports',
-	'acl_dst_ip'        => 'server1',
-	'acl_src_ip'        => 'customerX',
-	'acl_protocol'      => 'srv2'
+	'acl_action'   => 'permit',
+	'acl_id'       => 'acl-outside',
+	'acl_dst_port' => '80',
+	'acl_src_port' => 'high_ports',
+	'acl_dst_ip'   => 'server1',
+	'acl_src_ip'   => 'customerX',
+	'acl_protocol' => 'srv2'
 };
 
 ok( equals( $expected, $actual ), "access-list 4" );
@@ -439,17 +443,18 @@ ok( equals( $expected, $actual ), "access-list 4" );
 # access-list 5
 #
 
-$string = q{access-list acl-outside permit object citrix any OG_NETWORK citrix_servers};
+$string =
+  q{access-list acl-outside permit object citrix any OG_NETWORK citrix_servers};
 
 $tree   = $parser->parse($string);
 $actual = visit($tree);
 
 $expected = {
-	'acl_action'         => 'permit',
-	'acl_id'             => 'acl-outside',
-	'acl_dst_ip'         => 'citrix_servers',
-	'acl_protocol'       => 'citrix',
-	'acl_src_ip'         => 'any'
+	'acl_action'   => 'permit',
+	'acl_id'       => 'acl-outside',
+	'acl_dst_ip'   => 'citrix_servers',
+	'acl_protocol' => 'citrix',
+	'acl_src_ip'   => 'any'
 };
 
 ok( equals( $expected, $actual ), "access-list 5" );
@@ -458,19 +463,20 @@ ok( equals( $expected, $actual ), "access-list 5" );
 # access-list 6
 #
 
-$string = q{access-list acl-outside permit OG_SERVICE srv2 OG_NETWORK customerX OG_SERVICE high_ports net1 255.255.255.0 eq www};
+$string =
+q{access-list acl-outside permit OG_SERVICE srv2 OG_NETWORK customerX OG_SERVICE high_ports net1 255.255.255.0 eq www};
 
 $tree   = $parser->parse($string);
 $actual = visit($tree);
 
 $expected = {
-	'acl_action'        => 'permit',
-	'acl_id'            => 'acl-outside',
-	'acl_dst_port'      => 'www',
-	'acl_src_port'      => 'high_ports',
-	'acl_dst_ip'        => 'net1 255.255.255.0',
-	'acl_src_ip'        => 'customerX',
-	'acl_protocol'      => 'srv2'
+	'acl_action'   => 'permit',
+	'acl_id'       => 'acl-outside',
+	'acl_dst_port' => 'www',
+	'acl_src_port' => 'high_ports',
+	'acl_dst_ip'   => 'net1 255.255.255.0',
+	'acl_src_ip'   => 'customerX',
+	'acl_protocol' => 'srv2'
 };
 
 ok( equals( $expected, $actual ), "access-list 6" );
@@ -479,7 +485,8 @@ ok( equals( $expected, $actual ), "access-list 6" );
 # access-list 7
 #
 
-$string = q{access-list acl-outside permit ip any range 1024 65535 host server1 gt www};
+$string =
+  q{access-list acl-outside permit ip any range 1024 65535 host server1 gt www};
 
 $tree = $parser->parse($string);
 
@@ -501,21 +508,22 @@ ok( equals( $expected, $actual ), "access-list 7" );
 # access-list 8
 #
 
-$string = q{access-list acl-outside extended permit OG_PROTOCOL sip_transport OG_NETWORK voip_nets OG_SERVICE high_ports OG_NETWORK voip_srvs OG_SERVICE sip_ports};
+$string =
+q{access-list acl-outside extended permit OG_PROTOCOL sip_transport OG_NETWORK voip_nets OG_SERVICE high_ports OG_NETWORK voip_srvs OG_SERVICE sip_ports};
 
 $tree = $parser->parse($string);
 
 $actual = visit($tree);
 
 $expected = {
-	'acl_dst_ip' => 'voip_srvs',
-	'acl_id' => 'acl-outside',
-	'acl_action' => 'permit',
+	'acl_dst_ip'   => 'voip_srvs',
+	'acl_id'       => 'acl-outside',
+	'acl_action'   => 'permit',
 	'acl_src_port' => 'high_ports',
 	'acl_dst_port' => 'sip_ports',
 	'acl_protocol' => 'sip_transport',
-	'acl_src_ip' => 'voip_nets',
-	'acl_type' => 'extended'
+	'acl_src_ip'   => 'voip_nets',
+	'acl_type'     => 'extended'
 };
 
 ok( equals( $expected, $actual ), "access-list 8" );
@@ -524,19 +532,20 @@ ok( equals( $expected, $actual ), "access-list 8" );
 # access-list object service
 #
 
-$string = q{access-list acl-outside line 1 extended permit object citrix object internal_net object citrix_net};
+$string =
+q{access-list acl-outside line 1 extended permit object citrix object internal_net object citrix_net};
 
-$tree = $parser->parse($string);
+$tree   = $parser->parse($string);
 $actual = visit($tree);
 
 $expected = {
-	'acl_action'         => 'permit',
-	'acl_id'             => 'acl-outside',
-	'acl_dst_ip'         => 'citrix_net',
-	'acl_protocol'       => 'citrix',
-	'acl_line'           => '1',
-	'acl_src_ip'         => 'internal_net',
-	'acl_type'           => 'extended'
+	'acl_action'   => 'permit',
+	'acl_id'       => 'acl-outside',
+	'acl_dst_ip'   => 'citrix_net',
+	'acl_protocol' => 'citrix',
+	'acl_line'     => '1',
+	'acl_src_ip'   => 'internal_net',
+	'acl_type'     => 'extended'
 };
 
 ok( equals( $expected, $actual ), "access-list object service" );
@@ -659,6 +668,13 @@ sub visit {
 
 		if ( exists( $Rule_To_Key_Map->{$rule_id} ) ) {
 			$parent_key = $rule_id;
+		}
+
+		if ( $rule_id eq "names" ) {
+			$result->{'name'}        = $node->{NAME}->{__VALUE__};
+			$result->{'ip'}          = $node->{IPADDRESS}->{__VALUE__};
+			$result->{'description'} = $node->{REMARKS}->{__VALUE__};
+			return $result;
 		}
 
 		foreach my $key ( keys %$node ) {

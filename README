@@ -17,7 +17,7 @@ Object::KVC::Hash object. Each property within the line of
 configuration is represented by a key value pair.
 
 The key describes what the property within the specific 
-line of configuration, such as "ID," or "SRC_IP."
+line of configuration is, such as "ID," or "SRC_IP."
  
 The Object::KVC::Hash value objects are the basic types
 found in a firewall configuration, such as IP addresses,

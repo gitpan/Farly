@@ -13,3 +13,6 @@
   - Fixed bug in ::ASA::Parser names rule
   - Added Line number printing in ASA.tt
   - "DIGIT" and "ICMP_TYPE" Token to Object::KVC::Integer
+  
+0.05 - 25 February, 2012
+  - Fixed asa_Parser.t names test

@@ -9,7 +9,7 @@ use Farly::IPv4::Address;
 require Farly::IPv4::Range;
 
 our @ISA = qw(Farly::IPv4::Object);
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub new {
 	my ( $class, $network ) = @_;
