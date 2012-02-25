@@ -5,19 +5,8 @@ use strict;
 use warnings;
 use Carp;
 use Log::Log4perl qw(get_logger);
-use Farly::IPv4::Address;
-use Farly::IPv4::Network;
-use Farly::IPv4::Range;
-use Farly::Transport::Port;
-use Farly::Transport::PortRange;
-use Farly::Transport::Protocol;
-use Object::KVC::List;
-use Object::KVC::Hash;
-use Object::KVC::HashRef;
-use Object::KVC::Set;
-use Object::KVC::String;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub new {
 	my $class  = shift;

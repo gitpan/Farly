@@ -9,7 +9,7 @@ WriteMakefile(
     VERSION_FROM      => 'lib/Farly.pm',
     PREREQ_PM         => {
 		%prereq,
-    		'Object::KVC'       => 0.01,
+    		'Object::KVC'       => 0.02,
     		'Parse::RecDescent' => 1.965001,
     		'Log::Log4perl'     => 1.35,
     		'Template'          => 2.22,	

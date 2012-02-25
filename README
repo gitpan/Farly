@@ -7,17 +7,17 @@ into an easily searchable vendor independent firewall model.
 
 Using the Farly firewall model, Perl scripts can be
 written to perform tasks such as firewall security audits,
-group or rule optimizations or large scale  firewall 
+group or rule optimizations or large scale firewall 
 configuration changes.
 
 Farly is object oriented, using a "key value coding" style.
 
 Each line of firewall configuration is represented by an
-Object::KVC::Hash object. Each element within that line of
-the configuration is represented by a key value pair.
+Object::KVC::Hash object. Each property within the line of
+configuration is represented by a key value pair.
 
-The key describes a property within the specific configuration
-element, such as "ID," or "SRC_IP."
+The key describes what the property within the specific 
+line of configuration, such as "ID," or "SRC_IP."
  
 The Object::KVC::Hash value objects are the basic types
 found in a firewall configuration, such as IP addresses,
@@ -25,17 +25,16 @@ protocols, port numbers, string identifiers and references
 to other configuration elements.
 
 The entire firewall device model, made up of 
-Object::KVC::Hash objects, is stored in an
-Object::KVC::List. The Object::KVC::List class
-implements object search functionality required for firewall
-rule analysis.
+Object::KVC::Hash objects, is stored in an Object::KVC::List.
+The Object::KVC::List class implements object search
+functionality required for firewall rule analysis.
 
 See "Farly" package SYNOPSIS for code which will dump a
 container, illustrating the Farly model. (The file 'test.cfg'
 in the /t  directory may be used as an example firewall 
-configuration).
+configuration.)
 
-See the "demo" directory for a Farly usage example.
+See the "demo" directory for a Farly usage examples.
 
 INSTALLATION
 
@@ -64,10 +63,10 @@ Cisco ASA 7.2 and up.
 
 LIMITATIONS
 
-- NAT configurations are not modelled.
-- No IPv6 support
 - The Farly model is a subset of the firewall configuration
 relevant to interfaces, objects, groups, and rules.
+- NAT configurations are not modelled.
+- No IPv6 support
 - Cisco "lt" and "gt" port operators are converted into port ranges.
 - The Cisco "ne" port operator is not currently supported.
 
@@ -95,7 +94,7 @@ during the construction of this library.
 
 AUTHOR
 
-Trystan Johnson <trystanzj@gmail.com>
+Trystan Johnson <tjohnson@cpan.org>
 
 COPYRIGHT AND LICENCE
 

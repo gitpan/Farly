@@ -5,7 +5,7 @@ use Farly;
 
 # specify the actual firewall configuration here
 
-my $file = "firewall_config.txt";
+my $file = "../t/test.cfg";
 
 # create the configuration file importer
 

@@ -10,14 +10,14 @@ use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our $AUTOLOAD;
 
 #each token type maps to a class
 our $Token_Class_Map = {
 	"STRING"      => "Object::KVC::String",
-	"DIGIT"       => "Object::KVC::String",
-	"NAME"        => "Object::KVC::String",                  #replace name with IP
+	"DIGIT"       => "Object::KVC::Integer",
+	"NAME"        => "Object::KVC::String",            #replace name with IP
 	"IF_REF"      => "Object::KVC::HashRef",
 	"OBJECT_REF"  => "Object::KVC::HashRef",
 	"GROUP_REF"   => "Object::KVC::HashRef",
@@ -31,9 +31,9 @@ our $Token_Class_Map = {
 	"IPRANGE"     => "Farly::IPv4::Range",
 	"NAMED_NET"   => "Object::KVC::String",             #replace name with IP
 	"PROTOCOL"    => "Farly::Transport::Protocol",
-	"GROUP_PROTOCOL" => "Object::KVC::String",          #because of "tcp-udp" option
-	"ICMP_TYPE"      => "Object::KVC::String",          #map string to int
-	"PORT_ID"        => "Farly::Transport::Port",   	#map string to int
+	"GROUP_PROTOCOL" => "Object::KVC::String",          #not ::Protocol because of "tcp-udp"
+	"ICMP_TYPE"      => "Object::KVC::Integer",         #map string to int
+	"PORT_ID"       => "Farly::Transport::Port",      	#map string to int
 	"PORT_RANGE"    => "Farly::Transport::PortRange",   #map string to int
 	"PORT_GT"       => "Farly::Transport::PortRange",   #map string to int
 	"PORT_LT"       => "Farly::Transport::PortRange",   #map string to int
@@ -172,6 +172,16 @@ sub NAMED_NET {
 sub ANY {
 	my ( $self, $node ) = @_;
 	$node->{'__VALUE__'} = Farly::IPv4::Network->new("0.0.0.0 0.0.0.0");
+}
+
+sub ICMP_TYPE {
+	my ( $self, $node ) = @_;
+
+	my $icmp_type = $node->{'__VALUE__'};
+
+	$node->{'__VALUE__'} = defined( $self->icmp_formatter()->as_integer($icmp_type) )
+	  ? Object::KVC::Integer->new( $self->icmp_formatter()->as_integer($icmp_type) )
+	  : Object::KVC::Integer->new( $icmp_type );
 }
 
 sub PROTOCOL {

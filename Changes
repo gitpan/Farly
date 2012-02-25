@@ -6,3 +6,10 @@
 
 0.03 - 12 February, 2012
   - Fixed Makefile.PL error
+  
+0.04 - 25 February, 2012
+  - Fixed bug in Farly::IPv4::Object::gt() and Farly::Transport::Object::gt()
+  - Fixed bug in Farly::Transport::Protocol::intersects()
+  - Fixed bug in ::ASA::Parser names rule
+  - Added Line number printing in ASA.tt
+  - "DIGIT" and "ICMP_TYPE" Token to Object::KVC::Integer

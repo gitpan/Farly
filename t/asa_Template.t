@@ -4,6 +4,7 @@ use strict;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($ERROR);
 
+use Farly;
 use Farly::ASA::Builder;
 use Farly::ASA::Template;
 use Test::Simple tests => 1;
@@ -159,7 +160,7 @@ object network test-srv2
  host 10.1.2.3
 object service test-srv2
  service tcp source range 1024 65535 destination eq 80
-access-list outside-in permit tcp any object-group high-ports host 192.168.1.1 eq 443 log interval 600 inactive
+access-list outside-in line 1 permit tcp any object-group high-ports host 192.168.1.1 eq 443 log interval 600 inactive
 interface Vlan10
  nameif outside
  security-level 0

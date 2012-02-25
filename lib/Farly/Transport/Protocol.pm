@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub new {
 	my ( $class, $protocol ) = @_;
@@ -56,7 +56,7 @@ sub contains {
 
 sub intersects {
 	my ( $self, $other ) = @_;
-	return $self->equals($other);
+	return $self->contains($other);
 }
 
 1;

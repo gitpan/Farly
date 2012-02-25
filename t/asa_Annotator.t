@@ -8,6 +8,7 @@ use Test::Simple tests => 3;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($ERROR);
 
+use Farly;
 use Farly::ASA::Builder;
 use Farly::ASA::Annotator;
 
@@ -483,7 +484,7 @@ $expected = {
 	'acl_action'   => Object::KVC::String->new('permit'),
 	'acl_dst_port' => Farly::Transport::PortRange->new('1 1024'),
 	'acl_src_port' => Farly::Transport::PortRange->new('1024 65535'),
-	'acl_line'     => Object::KVC::String->new('1'),
+	'acl_line'     => Object::KVC::Integer->new('1'),
 	'acl_protocol' => Farly::Transport::Protocol->new('6'),
 	'acl_src_ip'   => Farly::IPv4::Network->new('0.0.0.0 0.0.0.0'),
 	'acl_type'     => Object::KVC::String->new('extended'),

@@ -34,7 +34,7 @@ ok( equals( $expected, $actual ), "hostname" );
 # name
 #
 
-$string = q{name 192.168.10.0 net1};
+$string = q{name 192.168.10.0 net1 description This is a test};
 $tree   = $parser->parse($string);
 $actual = visit($tree);
 

@@ -7,12 +7,12 @@ use Carp;
 use Farly::Transport::Object;
 
 our @ISA = qw(Farly::Transport::Object);
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub new {
 	my ( $class, $port ) = @_;
 
-	die "Port required" unless (defined($port));
+	confess "Port required" unless (defined($port));
 
 	my $self = {
 		PORT => undef, 
@@ -29,10 +29,10 @@ sub _init {
 
 	$port =~ s/\s+//g;
 
-	die "invalid port $port"
+	confess "invalid port $port"
 	  unless ( $port =~ /\d+/ );
 
-	die "invalid port $port"
+	confess "invalid port $port"
 	  unless ( $port >= 0 && $port <= 65535 );
 
 	$self->{PORT} = $port;

@@ -102,6 +102,10 @@ destination	[% DST_PORT %]
 
 access-list [% ID %]
 
+[% IF LINE.defined %]
+line [% LINE %]
+[% END %]
+
 [% IF COMMENT.defined %]
 remark [% COMMENT %]
 [% END %]

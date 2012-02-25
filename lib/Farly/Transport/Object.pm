@@ -4,7 +4,7 @@ use 5.008008;
 use strict;
 use warnings;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub size {
 	return $_[0]->last() - $_[0]->first();
@@ -48,7 +48,7 @@ sub gt {
 	
 	if ( $other->isa('Farly::Transport::Object') ) {
 
-		return $self->last() > $other->first();
+		return $self->first() > $other->last();
 	}
 }
 

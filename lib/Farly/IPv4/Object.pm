@@ -8,7 +8,7 @@ use Carp;
 require UNIVERSAL::DOES
   unless defined &UNIVERSAL::DOES;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub size {
 	my ($self) = @_;
@@ -54,7 +54,7 @@ sub gt {
 
 	if ( $other->DOES('Farly::IPv4::Object') ) {
 
-		return $self->last() > $other->first();
+		return $self->first() > $other->last();
 	}
 }
 
@@ -88,7 +88,7 @@ Farly::IPv4::Object - IPv4 base class
 
 This is a base class for Farly::IPv4 classes. It can not be used directly.
 
-=head1 INTERFACE
+=head1 METHODS
   
 =head2 adjacent( <Farly::IPv4::Object> )
 

@@ -7,9 +7,16 @@ use Carp;
 use IO::File;
 use File::Spec;
 use Log::Log4perl qw(get_logger);
+use Object::KVC;
 use Farly::Director;
+use Farly::IPv4::Address;
+use Farly::IPv4::Network;
+use Farly::IPv4::Range;
+use Farly::Transport::Port;
+use Farly::Transport::PortRange;
+use Farly::Transport::Protocol;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 our ($volume,$dir,$file) = File::Spec->splitpath( $INC{'Farly.pm'} );
 Log::Log4perl::init( $volume.$dir.'Farly/Log/Farly.conf');
