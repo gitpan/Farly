@@ -4,10 +4,10 @@ use 5.008008;
 use strict;
 use warnings;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub size {
-	return $_[0]->last() - $_[0]->first();
+	return $_[0]->last - $_[0]->first;
 }
 
 sub equals {
@@ -15,8 +15,8 @@ sub equals {
 
 	if ( $other->isa('Farly::Transport::Object') ) {
 
-		return $self->first() == $other->first()
-		  && $self->last() == $other->last();
+		return $self->first == $other->first
+		  && $self->last == $other->last;
 	}
 }
 
@@ -25,8 +25,8 @@ sub contains {
 
 	if ( $other->isa('Farly::Transport::Object') ) {
 
-		return $self->first() <= $other->first()
-		  && $self->last() >= $other->last();
+		return $self->first <= $other->first
+		  && $self->last >= $other->last;
 	}
 }
 
@@ -35,11 +35,14 @@ sub intersects {
 
 	if ( $other->isa('Farly::Transport::Object') ) {
 
-		return ( $self->first() <= $other->first()
-		  && $self->last() >= $other->first() )
+		return ( $self->first <= $other->first
+		  && $other->first <= $self->last )
 		||
-		( $self->first() <= $other->last()
-		  && $self->last() >= $other->last() );
+		( $self->first <= $other->last
+		  && $other->last <= $self->last )
+		||
+		( $other->first <= $self->first
+		  && $self->first <= $other->last );
 	}
 }
 
@@ -48,7 +51,7 @@ sub gt {
 	
 	if ( $other->isa('Farly::Transport::Object') ) {
 
-		return $self->first() > $other->last();
+		return $self->first > $other->last;
 	}
 }
 
@@ -57,7 +60,7 @@ sub lt {
 
 	if ( $other->isa('Farly::Transport::Object') ) {
 
-		return $self->last() < $other->first();
+		return $self->last < $other->first;
 	}
 }
 
@@ -67,7 +70,7 @@ sub adjacent {
 	if ( $other->isa('Farly::Transport::Object') ) {
 
 		return $self->size() == $other->size()
-		  && ( $self->last() + 1 ) == $other->first();
+		  && ( $self->last + 1 ) == $other->first;
 	}
 }
 

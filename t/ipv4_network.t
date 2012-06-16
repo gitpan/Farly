@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::Simple qw(no_plan);
+use Test::Simple tests => 22;
 
 use Farly::IPv4::Address;
 use Farly::IPv4::Network;
@@ -63,9 +63,11 @@ ok ( $net2->gt($net3), "net gt net");
 
 ok ( $net13->lt($net14), "net lt net");
 
-ok ( $net3->adjacent($net1), "adjacent net" );
+ok ( $net3->adjacent($net1), "adjacent net 1" );
 
-ok ( ! $net1->adjacent($net3), "! adjacent net" );
+ok ( $net1->adjacent($net3), "! adjacent net 2" );
+
+ok ( ! $net5->adjacent($net15), "! adjacent net" );
 
 ok ( $net15->adjacent($ip5), " adjacent ip");
 

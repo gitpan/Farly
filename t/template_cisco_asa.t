@@ -6,15 +6,14 @@ Log::Log4perl->easy_init($ERROR);
 
 use Farly;
 use Farly::ASA::Builder;
-use Farly::ASA::Template;
+use Farly::Template::Cisco;
 use Test::Simple tests => 1;
 
 my $container = Object::KVC::List->new();
 
-my $template = Farly::ASA::Template->new();
-
 my $ce1 = Object::KVC::Hash->new();
 
+$ce1->set( "REMOVE",         Object::KVC::String->new("OBJECT") );
 $ce1->set( "ID",             Object::KVC::String->new("ms-rpc-locator") );
 $ce1->set( "ENTRY",          Object::KVC::String->new("GROUP") );
 $ce1->set( "GROUP_PROTOCOL", Object::KVC::String->new("tcp") );
@@ -131,40 +130,80 @@ $ce9->set( "INTERFACE", $if_ref );
 
 $container->add($ce9);
 
+my $ce10 = Object::KVC::Hash->new();
 
-my $string;
-open( SAVEOUT, ">&STDOUT" );
+$ce10->set( "REMOVE",         Object::KVC::String->new("OBJECT") );
+$ce10->set( "ENTRY",       Object::KVC::String->new("OBJECT") );
+$ce10->set( "ID",          Object::KVC::String->new("test-srv2") );
+$ce10->set( "OBJECT_TYPE", Object::KVC::String->new("SERVICE") );
+$ce10->set( "PROTOCOL",    Farly::Transport::Protocol->new(6) );
+$ce10->set( "SRC_PORT",    Farly::Transport::PortRange->new("1024 65535") );
+$ce10->set( "DST_PORT",    Farly::Transport::Port->new("80") );
 
-close STDOUT;
-open( STDOUT, '>>', \$string ) or die "Can't open STDOUT: $!";
+$container->add($ce10);
+
+my $ce11 = Object::KVC::Hash->new();
+
+$grp_ref = Object::KVC::HashRef->new();
+$grp_ref->set( "ENTRY", Object::KVC::String->new("GROUP") );
+$grp_ref->set( "ID",    Object::KVC::String->new("high-ports") );
+
+$ce11->set( "REMOVE",       Object::KVC::String->new("RULE") );
+$ce11->set( "ENTRY",        Object::KVC::String->new("RULE") );
+$ce11->set( "ID",           Object::KVC::String->new("outside-in") );
+$ce11->set( "ACTION",       Object::KVC::String->new("permit") );
+$ce11->set( "PROTOCOL",     Farly::Transport::Protocol->new(6) );
+$ce11->set( "SRC_IP",       Farly::IPv4::Network->new("0.0.0.0 0.0.0.0") );
+$ce11->set( "SRC_PORT",     $grp_ref );
+$ce11->set( "DST_IP",       Farly::IPv4::Address->new("192.168.1.1") );
+$ce11->set( "DST_PORT",     Farly::Transport::Port->new("443") );
+$ce11->set( "LOG_LEVEL",    Object::KVC::String->new("6") );
+$ce11->set( "LOG_INTERVAL", Object::KVC::String->new("600") );
+$ce11->set( "STATUS",       Object::KVC::String->new("inactive") );
+
+$container->add($ce11);
+
+my $ce12 = Object::KVC::Hash->new();
+
+$ce12->set( "REMOVE",         Object::KVC::String->new("GROUP") );
+$ce12->set( "ID",             Object::KVC::String->new("ms-rpc-locator") );
+$ce12->set( "ENTRY",          Object::KVC::String->new("GROUP") );
+$ce12->set( "GROUP_PROTOCOL", Object::KVC::String->new("tcp") );
+$ce12->set( "OBJECT",         Farly::Transport::Port->new(445) );
+$ce12->set( "GROUP_TYPE",     Object::KVC::String->new("service") );
+$ce12->set( "OBJECT_TYPE",    Object::KVC::String->new("PORT") );
+
+$container->add($ce12);
+
+my $string = '';
+my $template = Farly::Template::Cisco->new( 'ASA', 'OUTPUT' => \$string );
 
 foreach my $ce ( $container->iter() ) {
 	$template->as_string($ce);
-	print "\n";
+	$string .= "\n";
 }
 
-close(STDOUT);
-open( STDOUT, ">&SAVEOUT" );
-
-chomp($string);
-
 my $expected = q{object-group service ms-rpc-locator tcp
- port-object eq 445
+no port-object eq 445
 object-group network ms-rpc-server
  group-object test1
 object-group service ms-rpc-srv
- service-object tcp source range 1024 65535 destination eq 80
+ service-object 6 source range 1024 65535 destination eq 80
 object-group service INFO_ADDRESS
- service-object icmp mask-request
+ service-object 1 17
 object network test-srv2
  host 10.1.2.3
 object service test-srv2
- service tcp source range 1024 65535 destination eq 80
-access-list outside-in line 1 permit tcp any object-group high-ports host 192.168.1.1 eq 443 log interval 600 inactive
+ service 6 source range 1024 65535 destination eq 80
+access-list outside-in line 1 permit 6 any object-group high-ports host 192.168.1.1 eq 443 log interval 600 inactive
 interface Vlan10
  nameif outside
  security-level 0
  ip address 10.2.19.8 255.255.255.0 standby 10.2.19.9
-access-group outside-in in interface outside};
+access-group outside-in in interface outside
+no object service test-srv2
+no access-list outside-in permit 6 any object-group high-ports host 192.168.1.1 eq 443 log interval 600 inactive
+no object-group service ms-rpc-locator tcp
+};
 
 ok( $string eq $expected, "template" );

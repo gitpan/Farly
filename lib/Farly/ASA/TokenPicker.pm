@@ -4,10 +4,10 @@ use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Scalar::Util 'blessed';
+use Scalar::Util qw(blessed);
 use Log::Log4perl qw(get_logger);
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our $AUTOLOAD;
 
 # when this method is called, create a new object
@@ -229,18 +229,17 @@ __END__
 
 =head1 NAME
 
-Farly::ASA::TokenPicker - Collects Tokens from a parse tree, storing
-                          them in a Object::KVC::Hash object
+Farly::ASA::TokenPicker - Collects value objects from the parse tree
 
 =head1 DESCRIPTION
 
 Farly::ASA::TokenPicker walks a Parse::RecDescent <autotree> parse tree
-searching for Token objects. Token objects are recognized by the presence
+searching for Token value objects. Token objects are recognized by the presence
 of the '__VALUE__' key (see <autotree>).
 
-When a Token object is found the parser rule name associated with that
+When a Token value object is found the parser rule name associated with that
 token is used to look up a key. The returned key and token value are then
-put into an Object::KVC::Hash object.
+stored in an Object::KVC::Hash object.
 
 A new Object::KVC::Hash object is created and added to an
 Object::KVC::List every time the TokenPicker visit method

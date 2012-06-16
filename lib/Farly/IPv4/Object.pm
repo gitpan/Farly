@@ -8,11 +8,11 @@ use Carp;
 require UNIVERSAL::DOES
   unless defined &UNIVERSAL::DOES;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub size {
 	my ($self) = @_;
-	return $self->last() - $self->first() + 1;
+	return $self->last - $self->first + 1;
 }
 
 sub equals {
@@ -20,9 +20,9 @@ sub equals {
 
 	if ( $other->DOES('Farly::IPv4::Object') ) {
 	  
-		return $self->first() == $other->first()
-		  && $self->last() == $other->last()
-		  && $self->size() == $other->size();
+		return $self->first == $other->first
+		  && $self->last == $other->last
+		  && $self->size == $other->size;
 	}
 }
 
@@ -31,8 +31,8 @@ sub contains {
 
 	if ( $other->DOES('Farly::IPv4::Object') ) {
 
-		return $self->first() <= $other->first()
-		  && $self->last() >= $other->last();
+		return $self->first <= $other->first
+		  && $self->last >= $other->last;
 	}
 }
 
@@ -41,11 +41,14 @@ sub intersects {
 
 	if ( $other->DOES('Farly::IPv4::Object') ) {
 
-		return ( $self->first() <= $other->first()
-		  && $self->last() >= $other->first() )
+		return ( $self->first <= $other->first
+		  && $other->first <= $self->last )
 		||
-		( $self->first() <= $other->last()
-		  && $self->last() >= $other->last() );
+		( $self->first <= $other->last
+		  && $other->last <= $self->last )
+		||
+		( $other->first <= $self->first
+		  && $self->first <= $other->last );
 	}
 }
 
@@ -54,7 +57,7 @@ sub gt {
 
 	if ( $other->DOES('Farly::IPv4::Object') ) {
 
-		return $self->first() > $other->last();
+		return $self->first > $other->last;
 	}
 }
 
@@ -63,7 +66,7 @@ sub lt {
 
 	if ( $other->DOES('Farly::IPv4::Object') ) {
 
-		return $self->last() < $other->first();
+		return $self->last < $other->first;
 	}
 }
 
@@ -72,8 +75,8 @@ sub adjacent {
 
 	if ( $other->DOES('Farly::IPv4::Object') ) {
 
-		return $self->size() == $other->size()
-		  && ( $self->last() + 1 ) == $other->first();
+		return ( ( $self->last + 1 ) == $other->first )
+		  || ( ( $other->last + 1 ) == $self->first );
 	}
 }
 

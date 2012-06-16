@@ -1,19 +1,28 @@
 use strict;
 use warnings;
 
-use Test::Simple qw(no_plan);
+use Test::Simple tests => 21;
 
 use Farly::IPv4::Address;
 use Farly::IPv4::Network;
-
-#my $ip0 = Farly::IPv4::Address->new(0);
-#print map( $_->as_string()."\n", $ip0->iter() );
 
 my $ip1 = Farly::IPv4::Address->new("10.1.2.3");
 my $ip2 = Farly::IPv4::Address->new("10.1.2.3");
 my $ip3 = Farly::IPv4::Address->new("10.1.1.3");
 my $ip4 = Farly::IPv4::Address->new("10.1.3.3");
 my $ip5 = Farly::IPv4::Address->new("10.1.3.4");
+
+eval { my $ip6 = Farly::IPv4::Address->new("ip10.1.3.4"); };
+
+ok ( $@ =~ /invalid address/, "invalid address");
+
+eval { my $ip6 = Farly::IPv4::Address->new("10.1.3"); };
+
+ok ( $@ =~ /invalid address/, "invalid address");
+
+eval { my $ip6 = Farly::IPv4::Address->new("256.10.1.3"); };
+
+ok ( $@ =~ /format wrapped in pack/, "invalid address");
 
 ok( ref($ip1) eq "Farly::IPv4::Address", "IPv4Address new" );
 
@@ -35,7 +44,7 @@ ok( $ip4->adjacent($ip5), "adjacent IPv4Address" );
 
 ok( !$ip1->adjacent($ip5), "! adjacent IPv4Address" );
 
-ok( !$ip5->adjacent($ip4), "! adjacent IPv4Address" );
+ok( $ip5->adjacent($ip4), "adjacent IPv4Address" );
 
 my @arr = $ip1->iter();
 
@@ -58,4 +67,3 @@ ok( $net2->contains($ip1), "contains" );
 ok( $net3->gt($ip1), "gt IPv4Network" );
 
 ok( $net1->lt($ip1), "lt IPv4Network" );
-

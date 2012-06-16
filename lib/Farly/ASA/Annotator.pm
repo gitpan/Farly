@@ -4,13 +4,13 @@ use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Scalar::Util 'blessed';
+use Scalar::Util qw(blessed);
 use Log::Log4perl qw(get_logger);
 use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our $AUTOLOAD;
 
 #each token type maps to a class

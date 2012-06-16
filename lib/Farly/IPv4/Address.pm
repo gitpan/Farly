@@ -2,12 +2,12 @@ package Farly::IPv4::Address;
 
 use 5.008008;
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use Carp;
 use Farly::IPv4::Object;
 
 our @ISA     = qw(Farly::IPv4::Object);
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub new {
 	my ( $class, $address ) = @_;
@@ -15,41 +15,31 @@ sub new {
 	confess "IP address required"
 	  unless ( defined($address) );
 
-	my $self = {
-		ADDRESS => undef,
-	};
-	bless( $self, $class );
-
-	$self->_init($address);
-
-	return $self;
-}
-
-sub _init {
-	my ( $self, $address ) = @_;
+	carp "invalid constructor arguments"
+	  if ( scalar( @_ ) > 2 );
 
 	$address =~ s/\s+//g;
 
-	if ( $address =~ /((\d{1,3})((\.)(\d{1,3})){3})/ ) {
-
-		$self->{ADDRESS} = pack( "C4", split( /\./, $address ) );
-		
-		confess "$self invalid address"
-		  unless ( $self->address() >= 0 && $self->address() <= 4294967295 );
-		  
+	if ( $address =~ /^((\d{1,3})((\.)(\d{1,3})){3})$/ ) {
+		$address = pack( "C4", split( /\./, $address ) );
 	}
-	elsif ( $address =~ /\d+/) {
-		if ( $address >= 0 && $address <= 4294967295 ) {
-			$self->{ADDRESS} = pack( "N", $address);
-		}
-		else {
-			confess "$self invalid address";
-		}
-	}	
+	elsif ( $address =~ /^\d+$/) {
+		$address = pack( "N", $address);
+	}
+	else {
+		confess "invalid address $address";
+	}
+
+	my $ip = bless( \$address, $class );
+
+	confess "invalid address $address"
+	  unless ( $ip->address() >= 0 && $ip->address() <= 4294967295 );
+
+	return $ip;
 }
 
 sub address {
-	return unpack( "N", $_[0]->{ADDRESS} );
+	return unpack( "N", ${$_[0]} );
 }
 
 sub inverse {
@@ -73,7 +63,7 @@ sub end {
 }
 
 sub dottedDecimalFormat {
-	return join( ".", unpack( 'C4', $_[0]->{ADDRESS} ) );
+	return join( ".", unpack( 'C4', ${$_[0]} ) );
 }
 
 sub as_string {

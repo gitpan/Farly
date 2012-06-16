@@ -9,12 +9,13 @@ use Farly::IPv4::Address;
 require Farly::IPv4::Range;
 
 our @ISA = qw(Farly::IPv4::Object);
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub new {
 	my ( $class, $network ) = @_;
 
-	confess "IP address and subnet mask required" unless ($network);
+	confess "IP address and subnet mask required"
+	  unless ($network);
 
 	my $self = {
 		NETWORK => undef,    #Farly::IPv4::Address object
@@ -30,31 +31,31 @@ sub new {
 sub _init {
 	my ( $self, $network ) = @_;
 
-	if ( $network =~ /((\d{1,3})((\.)(\d{1,3})){3})\s+((\d{1,3})((\.)(\d{1,3})){3})/ )
-	{
-		my @net = split( /\s+/, $network );
-		$self->_set_address( $net[0] );
-		$self->_set_mask( $net[1] );
-	}
-	elsif ( $network =~ /(\d{1,3}(\.\d{1,3}){3})(\/)(\d+)/ )
-	{
-		my ( $address, $bits ) = split( "/", $network );
-		my $mask = $self->_bits_to_mask($bits);
+	$network =~ s/^\s+|\s+$//g;
 
-		$self->{NETWORK} = Farly::IPv4::Address->new($address);
-		$self->{MASK}    = Farly::IPv4::Address->new($mask);
-	}
-	elsif ( $network =~ /\d+\s+\d+/)
+	my $address;
+	my $mask;
+	my $bits;
+
+	if ( $network =~ /^((\d{1,3})((\.)(\d{1,3})){3})\s+((\d{1,3})((\.)(\d{1,3})){3})$/ )
 	{
-		my ( $address, $mask ) = split( /\s+/, $network );
-		$self->{NETWORK} = Farly::IPv4::Address->new($address);
-		$self->{MASK}    = Farly::IPv4::Address->new($mask);
+		( $address, $mask ) = split( /\s+/, $network );
+	}
+	elsif ( $network =~ /^(\d{1,3}(\.\d{1,3}){3})(\/)(\d+)$/ )
+	{
+		( $address, $bits ) = split( "/", $network );
+		$mask = $self->_bits_to_mask($bits);
+	}
+	elsif ( $network =~ /^\d+\s+\d+$/)
+	{
+		( $address, $mask ) = split( /\s+/, $network );
 	}
 	else {
 		confess "Invalid input $network";
 	}
-
-	$self->_is_valid_mask();
+	
+	$self->_set_address( $address );
+	$self->_set_mask( $mask );
 }
 
 sub _set_address {
@@ -64,8 +65,6 @@ sub _set_address {
 
 sub _set_mask {
 	my ( $self, $mask ) = @_;
-
-	$mask =~ s/\s+//g;
 
 	if ( $mask =~ /0.0.0.0/ ) {
 		$self->{MASK} = Farly::IPv4::Address->new($mask);
@@ -77,6 +76,8 @@ sub _set_mask {
 	else {
 		$self->{MASK} = Farly::IPv4::Address->new($mask);
 	}
+	
+	$self->_is_valid_mask();	
 }
 
 sub _bits_to_mask {
@@ -84,7 +85,7 @@ sub _bits_to_mask {
 	if ( $bits >= 0 && $bits <= 32 ) {
 		my $zeroBits = 32 - $bits;
 		my $ip = ( 1 << $zeroBits ) - 1;
-		return ~$ip & 4294967295;    #for 64-bit support?
+		return ~$ip & 4294967295;
 	}
 	else {
 		confess "$bits is not a valid subnet mask";
@@ -93,15 +94,15 @@ sub _bits_to_mask {
 
 sub _is_valid_mask {
 	my $mask = $_[0]->{MASK}->address();
-	my $currentBit;
+	my $current_bit;
 	my $flag = 0;
 
 	for ( my $i = 0 ; $i < 32 ; ++$i ) {
-		$currentBit = ( $mask >> $i ) & 1;
-		if ( $currentBit == 1 ) {
+		$current_bit = ( $mask >> $i ) & 1;
+		if ( $current_bit == 1 ) {
 			$flag = 1;
 		}
-		if ( ( $flag == 1 ) && ( $currentBit == 0 ) ) {
+		if ( ( $flag == 1 ) && ( $current_bit == 0 ) ) {
 			confess "$mask is not a valid subnet mask";
 		}
 	}
@@ -114,7 +115,7 @@ sub address {
 }
 
 sub network {
-	return ( $_[0]->{NETWORK}->address() & $_[0]->{MASK}->address() );
+	return $_[0]->{NETWORK}->address() & $_[0]->{MASK}->address();
 }
 
 sub mask {
@@ -134,15 +135,11 @@ sub last {
 }
 
 sub as_string {
-	return join( " ",
-		$_[0]->network_address()->as_string(),
-		$_[0]->mask()->as_string() );
+	return join( " ", $_[0]->network_address()->as_string(), $_[0]->mask()->as_string() );
 }
 
 sub as_wc_string {
-	return join( " ",
-		$_[0]->network_address()->as_string(),
-		$_[0]->wc_mask()->as_string() );
+	return join( " ", $_[0]->network_address()->as_string(), $_[0]->wc_mask()->as_string() );
 }
 
 sub network_address {
@@ -155,14 +152,6 @@ sub wc_mask {
 
 sub broadcast_address {
 	return Farly::IPv4::Address->new( $_[0]->network() + $_[0]->inverse_mask() );
-}
-
-sub first_host_address {
-	return Farly::IPv4::Address->new( $_[0]->network() + 1 );
-}
-
-sub last_host_address {
-	return Farly::IPv4::Address->new( $_[0]->network() + $_[0]->inverse_mask() - 1 );
 }
 
 sub start {
@@ -196,7 +185,7 @@ Inherits from Farly::IPv4::Object.
 =head2 new( <string> )
 
 The constructor accepts a dotted decimal format address and mask
-or slash format network.
+or CIDR format network.
 
  my $ip_network = Farly::IPv4::Network->new( "10.0.0.0 255.0.0.0" );
  my $ip_network = Farly::IPv4::Network->new( "10.0.0.0/8" );
@@ -230,20 +219,6 @@ Returns the network address as an Farly::IPv4::Address object
 Returns the broadcast address as an Farly::IPv4::Address object
 
   $ipv4_addr_object = $ip_network->broadcast_address();
-
-=head2 first_host_address()
-
-Returns the first host IP address in the network as 
-an Farly::IPv4::Address object
-
-  $first_host_addr_object = $ip_network->first_host_address();
-
-=head2 last_host_address()
-
-Returns the last host IP address in the network as 
-an Farly::IPv4::Address object
-
-  $last_host_addr_object = $ip_network->last_host_address();
 
 =head2 first()
 

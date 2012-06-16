@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::Simple qw(no_plan);
+use Test::Simple tests => 17;
 
 use Farly::IPv4::Range;
 use Farly::IPv4::Address;
@@ -10,6 +10,7 @@ my $range1 = Farly::IPv4::Range->new("10.0.1.1 10.0.1.16");
 my $range2 = Farly::IPv4::Range->new("10.0.1.8 10.0.1.12");
 my $range3 = Farly::IPv4::Range->new("10.0.1.15 10.0.1.31");
 my $range4 = Farly::IPv4::Range->new("10.0.1.32 10.0.1.47");
+my $range5 = Farly::IPv4::Range->new("10.0.1.36 10.0.1.39");
 
 my $start = Farly::IPv4::Address->new("10.0.1.1");
 my $end = Farly::IPv4::Address->new("10.0.1.16");
@@ -34,7 +35,9 @@ ok ( !$range1->equals($range4), "range !equals");
 ok ( $range3->gt($range2), "range gt");
 ok ( $range2->lt($range3), "range lt");
 ok ( $range1->size() == 16, "range size");
-ok ( $range1->intersects( $range2 ), "range intersects");
+ok ( $range1->intersects( $range2 ), "range intersects 1");
+ok ( $range4->intersects( $range5 ), "range intersects 2");
+ok ( $range5->intersects( $range4 ), "range intersects 3");
 
 sub ascending {
 	return $a->first() <=> $b->first() 

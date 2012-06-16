@@ -5,10 +5,10 @@ Farly is a firewall rule analysis library.
 Farly translates a vendor specific firewall configuration
 into an easily searchable vendor independent firewall model.
 
-Using the Farly firewall model, Perl scripts can be
-written to perform tasks such as firewall security audits,
-group or rule optimizations or large scale firewall 
-configuration changes.
+Using the Farly firewall model, Perl script based firewall 
+management tools can be written to perform tasks such as 
+firewall security audits, group or rule optimizations or
+large scale firewall configuration changes.
 
 Farly is object oriented, using a "key value coding" style.
 
@@ -31,10 +31,10 @@ functionality required for firewall rule analysis.
 
 See "Farly" package SYNOPSIS for code which will dump a
 container, illustrating the Farly model. (The file 'test.cfg'
-in the /t  directory may be used as an example firewall 
+in the /t directory may be used as an example firewall 
 configuration.)
 
-See the "demo" directory for a Farly usage examples.
+See the "demo" directory for Farly usage examples.
 
 INSTALLATION
 
@@ -65,6 +65,7 @@ LIMITATIONS
 
 - The Farly model is a subset of the firewall configuration
 relevant to interfaces, objects, groups, and rules.
+- Interface IP addresses set with 'dhcp' are not supported.
 - NAT configurations are not modelled.
 - No IPv6 support
 - Cisco "lt" and "gt" port operators are converted into port ranges.

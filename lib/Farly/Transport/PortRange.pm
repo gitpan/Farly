@@ -7,33 +7,30 @@ use Carp;
 use Farly::Transport::Port;
 use Farly::Transport::Object;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our @ISA = qw(Farly::Transport::Object);
 
 sub new {
+	my ($class, $first, $last) = @_;
 
 	my $self = {
 		LOW  => undef,
 		HIGH => undef,
 	};
-	bless( $self, $_[0] );
+	bless( $self, $class );
 
-	if ( defined $_[2] ) {
-
-		$self->{LOW}  = Farly::Transport::Port->new( $_[1] );
-		$self->{HIGH} = Farly::Transport::Port->new( $_[2] );
-
+	if ( defined $last ) {
+		$self->{LOW}  = Farly::Transport::Port->new( $first );
+		$self->{HIGH} = Farly::Transport::Port->new( $last );
 	}
-	elsif ( defined $_[1] ) {
-
-		my ( $low, $high ) = split( /-|\s+/, $_[1] );
-
+	elsif ( defined $first ) {
+		my ( $low, $high ) = split( /-|\s+/, $first );
 		$self->{LOW}  = Farly::Transport::Port->new($low);
 		$self->{HIGH} = Farly::Transport::Port->new($high);
-
 	}
 
-	confess "invalid port range" if ( $self->first() > $self->last() );
+	confess "invalid port range" 
+	  if ( $self->first() > $self->last() );
 
 	return $self;
 }

@@ -5,31 +5,30 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub new {
 	my ( $class, $protocol ) = @_;
 
-	confess " Not a protocol number " 
-		unless ( $protocol =~ /\d+/ );
+	confess "protocol number required" unless (defined $protocol);
+
+	$protocol =~ s/\s+//g;
+
+	confess "$protocol is not a number" 
+		unless ( $protocol =~ /^\d+$/ );
 	
-	confess " invalid protocol $protocol"
+	confess "invalid protocol $protocol"
 	  unless ( ( $protocol >= 0 && $protocol <= 255 ) );
 
-	my $self = {
-		PROTOCOL => $protocol,
-	};
-	bless( $self, $class );
-
-	return $self;
+	return bless( \$protocol, $class );;
 }
 
 sub protocol {
-	return $_[0]->{PROTOCOL};
+	return ${$_[0]};
 }
 
 sub as_string {
-	return $_[0]->{PROTOCOL};
+	return ${$_[0]};
 }
 
 sub equals {
@@ -56,7 +55,10 @@ sub contains {
 
 sub intersects {
 	my ( $self, $other ) = @_;
-	return $self->contains($other);
+	
+	if ( $self->contains($other) || $other->contains($self) ) {
+		return 1;
+	}
 }
 
 1;
@@ -64,7 +66,7 @@ __END__
 
 =head1 NAME
 
-Farly::Transport::Protocol - Represents an TCP/IP protocol number
+Farly::Transport::Protocol - TCP/IP protocol number
 
 =head1 DESCRIPTION
 

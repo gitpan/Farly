@@ -61,9 +61,9 @@ $expanded_rules->search( $web, $search_result );
 # create a template class to convert the search result
 # into ASA format
 
-use Farly::ASA::Template;
+use Farly::Template::Cisco;
 
-my $template = Farly::ASA::Template->new();
+my $template = Farly::Template::Cisco->new('ASA');
 
 # print the search results
 

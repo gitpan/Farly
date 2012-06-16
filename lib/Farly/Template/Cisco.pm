@@ -1,4 +1,4 @@
-package Farly::ASA::Template;
+package Farly::Template::Cisco;
 
 use 5.008008;
 use strict;
@@ -7,26 +7,21 @@ use Carp;
 use File::Spec;
 use Template;
 use Log::Log4perl qw(get_logger);
-use Farly::ASA::PortFormatter;
-use Farly::ASA::ProtocolFormatter;
-use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.05';
-our ( $volume, $dir, $file ) = File::Spec->splitpath( $INC{'Farly/ASA/Template.pm'} );
+our $VERSION = '0.06';
+our ( $volume, $dir, $file ) = File::Spec->splitpath( $INC{'Farly/Template/Cisco.pm'} );
 
 sub new {
-	my ($class) = @_;
+	my ($class, $file, %args) = @_;
 
 	my $self = {
-		TEMPLATE           => undef,
-		port_formatter     => Farly::ASA::PortFormatter->new(),
-		protocol_formatter => Farly::ASA::ProtocolFormatter->new(),
-		icmp_formatter     => Farly::ASA::ICMPFormatter->new(),
+		FILE     => $file,
+		TEMPLATE => undef,
 	};
 
 	bless $self, $class;
 
-	$self->_init();
+	$self->_init(%args);
 
 	my $logger = get_logger(__PACKAGE__);
 	$logger->info("$self NEW");
@@ -35,35 +30,23 @@ sub new {
 }
 
 sub _init {
-	my ($self) = @_;
+	my ($self, %args) = @_;
 
-	my $path = "$volume$dir";
+	my $path = "$volume$dir"."Files/";
 
 	$self->{TEMPLATE} = Template->new(
 		{
+			%args,
 			INCLUDE_PATH => $path,
 			TRIM         => 1,
 		}
 	) or die "$Template::ERROR\n";
 }
 
-sub template {
-	return $_[0]->{TEMPLATE};
-}
+sub _template { return $_[0]->{TEMPLATE}; }
+sub _file { return $_[0]->{FILE}; }
 
-sub port_formatter {
-	return $_[0]->{port_formatter};
-}
-
-sub protocol_formatter {
-	return $_[0]->{protocol_formatter};
-}
-
-sub icmp_formatter {
-	return $_[0]->{icmp_formatter};
-}
-
-sub value_format {
+sub _value_format {
 	my ( $self, $value ) = @_;
 
 	my $string;
@@ -80,12 +63,6 @@ sub value_format {
 
 		$string .= "range ".$value->as_string();
 	}
-	elsif ( $value->isa('Farly::Transport::Protocol') ) {
-
-		$string = defined( $self->protocol_formatter->as_string( $value->as_string() ) )
-		  ? $self->protocol_formatter->as_string( $value->as_string() )
-		  : $value->as_string();
-	}
 	elsif ( $value->isa('Object::KVC::HashRef') ) {
 
 		$string = $value->get("ID")->as_string();
@@ -100,14 +77,11 @@ sub value_format {
 	return $string;
 }
 
-sub format {
+sub _format {
 	my ( $self, $ce ) = @_;
 
 	my $GROUP_REF = Object::KVC::HashRef->new();
 	$GROUP_REF->set( "ENTRY", Object::KVC::String->new("GROUP") );
-
-	my $OBJECT = Object::KVC::Hash->new();
-	$OBJECT->set( "ENTRY", Object::KVC::String->new("OBJECT") );
 
 	my $OBJECT_REF = Object::KVC::HashRef->new();
 	$OBJECT_REF->set( "ENTRY", Object::KVC::String->new("OBJECT") );
@@ -115,12 +89,22 @@ sub format {
 	my $IF_REF = Object::KVC::HashRef->new();
 	$IF_REF->set( "ENTRY", Object::KVC::String->new("INTERFACE") );
 
+	my $INTERFACE = Object::KVC::Hash->new();
+	$INTERFACE->set( "ENTRY", Object::KVC::String->new("INTERFACE") );
+
 	my $RULE  = Object::KVC::String->new("RULE");
-	my $GROUP = Object::KVC::String->new("GROUP");
 
 	my $ALL = Farly::Transport::PortRange->new("1 65535");
 
 	my $hash;
+
+	#interface ip addresses should not be prefixed with "host"
+	if ( $ce->matches( $INTERFACE ) ) {
+		foreach my $key ( $ce->get_keys() ) {
+			$hash->{$key} = $ce->get($key)->as_string();
+		}
+		return $hash;
+	}
 
 	foreach my $key ( $ce->get_keys() ) {
 
@@ -149,15 +133,8 @@ sub format {
 		}
 
 		$string = defined($prefix)
-		  ? $prefix . " " . $self->value_format($value)
-		  : $self->value_format($value);
-
-		if ( $key eq "ICMP_TYPE" ) {
-			
-			$string = defined( $self->icmp_formatter->as_string( $value->as_string() ) )
-			  ? $self->icmp_formatter->as_string( $value->as_string() )
-			  : $value->as_string();
-		}
+		  ? $prefix . " " . $self->_value_format($value)
+		  : $self->_value_format($value);
 
 		$hash->{ $key } = $string;
 	}
@@ -169,22 +146,10 @@ sub format {
 sub as_string {
 	my ( $self, $ce ) = @_;
 
-	my $INTERFACE = Object::KVC::HashRef->new();
-	$INTERFACE->set( "ENTRY", Object::KVC::String->new("INTERFACE") );
+	my $hash = $self->_format($ce);
 
-	my $hash;
-	if ( $ce->matches( $INTERFACE ) ) {
-		foreach my $key ( $ce->get_keys() ) {
-			$hash->{$key} = $ce->get($key)->as_string();
-		}
-	}
-	else {
-		$hash = $self->format($ce);		
-	}
-
-	$self->template()->process( 'ASA.tt', $hash )
-	  or die $self->template()->error();
-	
+	$self->_template()->process( $self->_file, $hash )
+	  or die $self->_template()->error();
 }
 
 1;
@@ -192,31 +157,35 @@ __END__
 
 =head1 NAME
 
-Farly::ASA::Template - Converts the Farly firewall model into 
-                       Cisco ASA configurations.
+Farly::Template::Cisco - Converts the Farly firewall model into 
+                         Cisco format
 
 =head1 DESCRIPTION
 
-Farly::ASA::Template formats and prints the Farly firewall model into 
-Cisco ASA configuration format.
+Farly::Template::Cisco formats and prints the Farly firewall model into 
+Cisco configuration formats.
 
 =head1 METHODS
 
 =head2 new()
 
-The constructor. No arguments required.
+The constructor. Device type required.
 
-  $template = Farly::ASA::Template->new();
+  $template = Farly::Template::Cisco->new('ASA');
+
+Valid device types:
+
+  ASA
 
 =head2 as_string( <Object::KVC::Hash> )
 
-Prints the current Farly object in Cisco ASA string format.
+Prints the current Farly object in Cisco format.
 
   $template->as_string( $object );
 
 =head1 COPYRIGHT AND LICENCE
 
-Farly::ASA::Template
+Farly::Template::Cisco
 Copyright (C) 2012  Trystan Johnson
 
 This program is free software: you can redistribute it and/or modify

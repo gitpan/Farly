@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::Simple tests => 5;
+use Test::Simple tests => 8;
 
 use Farly::Transport::Protocol;
 
@@ -20,3 +20,9 @@ ok( $p2->contains($p3), "contains" );
 ok( !$p1->equals($p2), "!equals" );
 
 ok( $p2->equals($p3), "equals" );
+
+ok( $p2->intersects($ip), "intersects" );
+
+ok( $p2->intersects($p3), "intersects" );
+
+ok( ! $p1->intersects($p2), "!intersects" );

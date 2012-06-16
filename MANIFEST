@@ -3,7 +3,6 @@ MANIFEST
 Makefile.PL
 README
 demo/rule_search.pl
-lib/Farly/ASA/ASA.tt
 lib/Farly/ASA/Annotator.pm
 lib/Farly/ASA/Builder.pm
 lib/Farly/ASA/Filter.pm
@@ -11,7 +10,6 @@ lib/Farly/ASA/ICMPFormatter.pm
 lib/Farly/ASA/Parser.pm
 lib/Farly/ASA/PortFormatter.pm
 lib/Farly/ASA/ProtocolFormatter.pm
-lib/Farly/ASA/Template.pm
 lib/Farly/ASA/TokenPicker.pm
 lib/Farly/IPv4/Address.pm
 lib/Farly/IPv4/Network.pm
@@ -22,8 +20,11 @@ lib/Farly/Transport/Port.pm
 lib/Farly/Transport/PortRange.pm
 lib/Farly/Transport/Protocol.pm
 lib/Farly/Log/Farly.conf
+lib/Farly/Template/Files/ASA
+lib/Farly/Template/Cisco.pm
 lib/Farly/Builder.pm
 lib/Farly/Director.pm
+lib/Farly/Optimizer.pm
 lib/Farly/Rules.pm
 lib/Farly.pm
 t/asa_Annotator.t
@@ -34,13 +35,15 @@ t/asa_Import.t
 t/asa_Parser.t
 t/asa_PortFormatter.t
 t/asa_ProtocolFormatter.t
-t/asa_Template.t
 t/asa_TokenPicker.t
 t/builder.t
 t/director.t
+t/rules.t
+t/optimizer.t
 t/ipv4_address.t
 t/ipv4_network.t
 t/ipv4_range.t
+t/template_cisco_asa.t
 t/test.cfg
 t/transport_port.t
 t/transport_protocol.t

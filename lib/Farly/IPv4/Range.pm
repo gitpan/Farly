@@ -9,42 +9,39 @@ require Farly::IPv4::Network;
 use Farly::IPv4::Object;
 
 our @ISA = qw(Farly::IPv4::Object);
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub new {
 	my ($class, $first, $last) = @_;
-	# $first - a.b.c.d or 32 bit integer -|\s+ e.f.g.h or 32 bit integer 
-	# $last - a.b.c.d, or 32 bit integer
 
 	my $self = {
-		FIRST => undef,            #IPv4Address object
-		LAST  => undef,            #IPv4Address object
+		FIRST => undef,		#::IPv4::Address
+		LAST  => undef,		#::IPv4::Address
 	};
 	bless( $self, $class );
 	
 	if ( defined $last ) {
-		$self->{FIRST} = Farly::IPv4::Address->new( $first );
-		$self->{LAST}  = Farly::IPv4::Address->new( $last );
-		$self->init();
+		$self->_init( $first, $last );
 	}
 	elsif ( defined $first ) {
-		my ( $firstAddr, $lastAddr ) = split( /-|\s+/, $first );
-		$self->{FIRST} = Farly::IPv4::Address->new($firstAddr);
-		$self->{LAST}  = Farly::IPv4::Address->new($lastAddr);
-		$self->init();	
+		my ( $f, $l ) = split( /-|\s+/, $first );
+		$self->_init( $f, $l );	
+	}
+	else {
+		confess "first last address range required";
 	}
 	
 	return $self;
 }
 
-sub init {
-	my ( $self ) = @_;
-	if ( $self->first() <= $self->last() ) {
-		return 1;
-	}
-	else {
-		confess "First must be less than last";
-	}
+sub _init {
+	my ( $self, $first, $last ) = @_;
+
+	$self->{FIRST} = Farly::IPv4::Address->new($first);
+	$self->{LAST}  = Farly::IPv4::Address->new($last);
+	
+	confess "First must be less than last"
+	  if ( $self->first() > $self->last() );
 }
 
 sub first {
@@ -69,25 +66,11 @@ sub adjacent {
 }
 
 sub start {
-	my ($self, $start) = @_;
-	#start : IPv4Address
-	if (defined $start) {
-		$self->{FIRST} = $start;
-	}
-	else {
-		return $self->{FIRST};
-	}
+	return $_[0]->{FIRST};
 }
 
 sub end {
-	my ($self, $end) = @_;
-	#end : IPv4Address
-	if (defined $end) {
-		$self->{LAST} = $end;
-	}
-	else {
-		return $self->{LAST};
-	}	
+	return $_[0]->{LAST};
 }
 
 sub as_network {
@@ -215,7 +198,7 @@ follows the current range's last address.
 
 Returns an array containing the current Farly::IPv4::Range object.
 
-  my @array = $ip->iter();
+  my @array = $ip_range->iter();
 
 =head1 COPYRIGHT AND LICENSE
 

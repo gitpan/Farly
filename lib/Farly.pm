@@ -16,7 +16,7 @@ use Farly::Transport::Port;
 use Farly::Transport::PortRange;
 use Farly::Transport::Protocol;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 our ($volume,$dir,$file) = File::Spec->splitpath( $INC{'Farly.pm'} );
 Log::Log4perl::init( $volume.$dir.'Farly/Log/Farly.conf');
@@ -85,9 +85,17 @@ Farly - Firewall Analysis and Rewrite Library
 
 =head1 DESCRIPTION
 
-Farly is a factory class which abstracts the construction of
-an Object::KVC::List<Object::KVC::Hash> based firewall device
-model.
+Farly translates a vendor specific firewall configuration
+into an easily searchable vendor independent firewall model.
+
+Using the Farly firewall model, Perl scripts can be
+written to perform tasks such as firewall security audits,
+group or rule optimizations or large scale firewall 
+configuration changes.
+
+This module is a factory class which abstracts the 
+construction of an Object::KVC::List<Object::KVC::Hash> based
+firewall device model.
 
 Farly dies on error.
 

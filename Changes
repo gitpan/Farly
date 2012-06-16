@@ -16,3 +16,17 @@
   
 0.05 - 25 February, 2012
   - Fixed asa_Parser.t names test
+  
+0.06 - June, 2012
+  - documentation tweaks
+  - 'intersects' method bug fix in ::IPv4::Object, ::Transport::Object, ::Transport::Protocol
+  - ::IPv4 constructor refactoring, error checking and error testing 
+  - ::Protocol and ::Port error checking
+  - made ::IPv4::Address, ::Transport::Port, ::Transport::Protocol blessed 'SCALAR'ref
+  - added rules.t
+  - added Optimizer.pm and optimizer.t
+  - rewrite asa_Annotator.t and asa_TokenPicker.t
+  - replaced "Farly::ASA::Template" with "Farly::Template::Cisco"
+  - removed ASA specific formatters from "Farly::Template::Cisco"
+  - moved ASA/ASA.tt to 'Farly/Template/Files/ASA'
+  - added "REMOVE" property and corresponding ASA template updates
