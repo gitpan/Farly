@@ -8,7 +8,7 @@ use Log::Log4perl qw(get_logger);
 
 use Farly::Template::Cisco;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 sub new {
 	my ( $class, $rule_list ) = @_;
@@ -433,13 +433,20 @@ Farly::Optimizer - Optimize a raw firewall rule set
   my $file = "test.cfg";
   my $importer = Farly->new();
   my $container = $importer->process("ASA",$file);
+
   my $rule_expander = Farly::Rules->new( $container );
-  my $expanded_rules = $rule_expander->expand_all();
-  my $optimizer = Farly::Optimizer->new( $expanded_rules );
+  my $expanded_rules = $rule_expander->expand_all();  
+
+  my $search = Object::KVC::Hash->new();
+  $search->set( "ID", Object::KVC::String->new("outside-in") );
+  my $search_result = Object::KVC::List->new();
+  $expanded_rules->matches( $search, $search_result );
+
+  my $optimizer = Farly::Optimizer->new( $search_result );
   $optimizer->run();
   my $optimized_ruleset = $optimizer->optimized();
-  my $template = Farly::Template::Cisco->new('ASA');
 
+  my $template = Farly::Template::Cisco->new('ASA');
   foreach my $rule ( $optimized_ruleset->iter ) {
     $template->as_string( $rule );
     print "\n";

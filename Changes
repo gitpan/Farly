@@ -30,3 +30,6 @@
   - removed ASA specific formatters from "Farly::Template::Cisco"
   - moved ASA/ASA.tt to 'Farly/Template/Files/ASA'
   - added "REMOVE" property and corresponding ASA template updates
+
+0.07 - June, 2012
+  - Fixed documentation mistakes

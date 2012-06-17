@@ -7,7 +7,7 @@ use Carp;
 use Scalar::Util qw(blessed);
 use Log::Log4perl qw(get_logger);
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our $AUTOLOAD;
 
 # when this method is called, create a new object

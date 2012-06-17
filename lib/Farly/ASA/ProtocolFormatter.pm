@@ -4,7 +4,7 @@ use 5.008008;
 use strict;
 use warnings;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 our $Int_To_String = {
 	51  => "ah",
