@@ -1,4 +1,4 @@
-package Farly::Transport::Protocol;
+package Farly::IPv4::ICMPType;
 
 use 5.008008;
 use strict;
@@ -8,22 +8,22 @@ use Carp;
 our $VERSION = '0.08';
 
 sub new {
-	my ( $class, $protocol ) = @_;
+	my ( $class, $type ) = @_;
 
-	confess "protocol number required" unless (defined $protocol);
+	confess "type number required" unless (defined $type);
 
-	$protocol =~ s/\s+//g;
+	$type =~ s/\s+//g;
 
-	confess "$protocol is not a number" 
-		unless ( $protocol =~ /^\d+$/ );
-	
-	confess "invalid protocol $protocol"
-	  unless ( ( $protocol >= 0 && $protocol <= 255 ) );
+	confess "$type is not a number" 
+		unless ( $type =~ /^\d+$/ || $type =~ /^-1$/);
 
-	return bless( \$protocol, $class );
+	confess "invalid type $type"
+	  unless ( ( $type >= -1 && $type <= 255 ) );
+
+	return bless( \$type, $class );
 }
 
-sub protocol {
+sub type {
 	return ${$_[0]};
 }
 
@@ -34,18 +34,18 @@ sub as_string {
 sub equals {
 	my ( $self, $other ) = @_;
 
-	if ( $other->isa( 'Farly::Transport::Protocol' ) ) {
+	if ( $other->isa( 'Farly::IPv4::ICMPType' ) ) {
 
-		return $self->protocol() == $other->protocol();
+		return $self->type() == $other->type();
 	}
 }
 
 sub contains {
 	my ( $self, $other ) = @_;
 
-	if ( $other->isa( 'Farly::Transport::Protocol' ) ) {
+	if ( $other->isa( 'Farly::IPv4::ICMPType' ) ) {
 
-		if ( $self->protocol() == 0 ) {
+		if ( $self->type() == -1 ) {
 			return 1;
 		}
 	
@@ -66,11 +66,11 @@ __END__
 
 =head1 NAME
 
-Farly::Transport::Protocol - TCP/IP protocol number
+Farly::IPv4::ICMPType - ICMP type number
 
 =head1 DESCRIPTION
 
-Represents a TCP/IP protocol number as an object
+Represents an ICMP type number as an object
 
 =head1 METHODS
 
@@ -78,44 +78,44 @@ Represents a TCP/IP protocol number as an object
 
 The constructor.
 
-   my $protocol = Farly::Transport::Protocol->new();
+   my $type = Farly::IPv4::ICMPType->new();
 
 No arguments.
 
-=head2 protocol()
+=head2 type()
 
-Returns the integer protocol number.
+Returns the integer type number.
 
-  my $8_bit_int = $protocol->protocol();
+  my $8_bit_int = $type->type();
 
-=head2 equals( <Farly::Transport::Protocol> )
+=head2 equals( <Farly::IPv4::ICMPType> )
 
-Returns true if the protocols are equal.
+Returns true if the ICMP types are equal.
 
-  $protocol->equals( $protocol_2 );
+  $type->equals( $type_2 );
 
-=head2 contains( <Farly::Transport::Protocol> )
+=head2 contains( <Farly::IPv4::ICMPType> )
 
-Returns true if $protocol is "ip" or all protocols.
-Returns true if the protocols are equal.
+Returns true if $type is '-1' (any) ICMP type.
+Returns true if the types are equal.
 
-  $protocol->contains( $protocol_2 );
+  $type->contains( $type_2 );
 
-=head2 intersects( <Farly::Transport::Protocol> )
+=head2 intersects( <Farly::IPv4::ICMPType> )
 
-Returns true if the protocols are equal.
+Returns true if the types are equal.
 
-  $protocol->intersects( $protocol_2 );
+  $type->intersects( $type_2 );
 
 =head2 as_string()
 
 Returns the string value
 
-  $protocol->as_string();
+  $type->as_string();
 
 =head1 COPYRIGHT AND LICENSE
 
-Farly::Transport::Protocol
+Farly::IPv4::ICMPType
 Copyright (C) 2012  Trystan Johnson
 
 This program is free software: you can redistribute it and/or modify

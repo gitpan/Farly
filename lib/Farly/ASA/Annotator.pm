@@ -10,50 +10,50 @@ use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 our $AUTOLOAD;
 
 #each token type maps to a class
 our $Token_Class_Map = {
-	"STRING"      => "Object::KVC::String",
-	"DIGIT"       => "Object::KVC::Integer",
-	"NAME"        => "Object::KVC::String",            #replace name with IP
-	"IF_REF"      => "Object::KVC::HashRef",
-	"OBJECT_REF"  => "Object::KVC::HashRef",
-	"GROUP_REF"   => "Object::KVC::HashRef",
-	"RULE_REF"    => "Object::KVC::HashRef",
-	"GROUP_TYPE"  => "Object::KVC::String",
-	"OBJECT_TYPE" => "Object::KVC::String",
-	"ANY"         => "Farly::IPv4::Network",			#ANY = '0.0.0.0 0.0.0.0'
-	"IPADDRESS"   => "Farly::IPv4::Address",
-	"MASK"        => "Farly::IPv4::Address",
-	"IPNETWORK"   => "Farly::IPv4::Network",
-	"IPRANGE"     => "Farly::IPv4::Range",
-	"NAMED_NET"   => "Object::KVC::String",             #replace name with IP
-	"PROTOCOL"    => "Farly::Transport::Protocol",
-	"GROUP_PROTOCOL" => "Object::KVC::String",          #not ::Protocol because of "tcp-udp"
-	"ICMP_TYPE"      => "Object::KVC::Integer",         #map string to int
-	"PORT_ID"       => "Farly::Transport::Port",      	#map string to int
-	"PORT_RANGE"    => "Farly::Transport::PortRange",   #map string to int
-	"PORT_GT"       => "Farly::Transport::PortRange",   #map string to int
-	"PORT_LT"       => "Farly::Transport::PortRange",   #map string to int
-	"ACTIONS"       => "Object::KVC::String",
-	"ACL_TYPES"     => "Object::KVC::String",
-	"REMARKS"       => "Object::KVC::String",
-	"ACL_DIRECTION" => "Object::KVC::String",
-	"ACL_GLOBAL"    => "Object::KVC::String",
-	"STATE"         => "Object::KVC::String",
-	"ACL_STATUS"    => "Object::KVC::String",
-	"LOG_LEVEL"     => "Object::KVC::String",
+	'STRING'      => 'Object::KVC::String',
+	'DIGIT'       => 'Object::KVC::Integer',
+	'NAME'        => 'Object::KVC::String',            #replace name with IP
+	'IF_REF'      => 'Object::KVC::HashRef',
+	'OBJECT_REF'  => 'Object::KVC::HashRef',
+	'GROUP_REF'   => 'Object::KVC::HashRef',
+	'RULE_REF'    => 'Object::KVC::HashRef',
+	'GROUP_TYPE'  => 'Object::KVC::String',
+	'OBJECT_TYPE' => 'Object::KVC::String',
+	'ANY'         => 'Farly::IPv4::Network',			#ANY = '0.0.0.0 0.0.0.0'
+	'IPADDRESS'   => 'Farly::IPv4::Address',
+	'MASK'        => 'Farly::IPv4::Address',
+	'IPNETWORK'   => 'Farly::IPv4::Network',
+	'IPRANGE'     => 'Farly::IPv4::Range',
+	'NAMED_NET'   => 'Object::KVC::String',             #replace name with IP
+	'PROTOCOL'    => 'Farly::Transport::Protocol',
+	'GROUP_PROTOCOL' => 'Object::KVC::String',          #not ::Protocol because of 'tcp-udp'
+	'ICMP_TYPE'      => 'Farly::IPv4::ICMPType',        #map string to int
+	'PORT_ID'       => 'Farly::Transport::Port',      	#map string to int
+	'PORT_RANGE'    => 'Farly::Transport::PortRange',   #map string to int
+	'PORT_GT'       => 'Farly::Transport::PortGT',      #map string to int
+	'PORT_LT'       => 'Farly::Transport::PortLT',      #map string to int
+	'ACTIONS'       => 'Object::KVC::String',
+	'ACL_TYPES'     => 'Object::KVC::String',
+	'REMARKS'       => 'Object::KVC::String',
+	'ACL_DIRECTION' => 'Object::KVC::String',
+	'ACL_GLOBAL'    => 'Object::KVC::String',
+	'STATE'         => 'Object::KVC::String',
+	'ACL_STATUS'    => 'Object::KVC::String',
+	'LOG_LEVEL'     => 'Object::KVC::String',
 };
 
-# "ENTRY" is like a namespace in which an ID must be unique
+# 'ENTRY' is like a namespace in which an ID must be unique
 # A <type>_REF refers to a Object::KVC::Hash by ENTRY and ID
 our $Entry_Map = {
-	"IF_REF"     => "INTERFACE",
-	"OBJECT_REF" => "OBJECT",
-	"GROUP_REF"  => "GROUP",
-	"RULE_REF"   => "RULE",
+	'IF_REF'     => 'INTERFACE',
+	'OBJECT_REF' => 'OBJECT',
+	'GROUP_REF'  => 'GROUP',
+	'RULE_REF'   => 'RULE',
 };
 
 sub new {
@@ -107,14 +107,14 @@ sub visit {
 			my $method = ref($node);
 			$self->$method($node);
 		}
-		elsif ( $node->isa("names") ) {
+		elsif ( $node->isa('names') ) {
 			$self->_new_name($node);
 		}
 		else {
 
 			foreach my $key ( keys %$node ) {
 
-				next if ( $key eq "EOL" );
+				next if ( $key eq 'EOL' );
 
 				my $next = $node->{$key};
 
@@ -180,8 +180,8 @@ sub ICMP_TYPE {
 	my $icmp_type = $node->{'__VALUE__'};
 
 	$node->{'__VALUE__'} = defined( $self->icmp_formatter()->as_integer($icmp_type) )
-	  ? Object::KVC::Integer->new( $self->icmp_formatter()->as_integer($icmp_type) )
-	  : Object::KVC::Integer->new( $icmp_type );
+	  ? Farly::IPv4::ICMPType->new( $self->icmp_formatter()->as_integer($icmp_type) )
+	  : Farly::IPv4::ICMPType->new( $icmp_type );
 }
 
 sub PROTOCOL {
@@ -223,12 +223,22 @@ sub PORT_RANGE {
 
 sub PORT_GT {
 	my ( $self, $node ) = @_;
-	$self->PORT_RANGE($node);
+
+	my $port = $node->{'__VALUE__'};
+
+	$node->{'__VALUE__'} = defined( $self->port_formatter()->as_integer($port) )
+	  ? Farly::Transport::PortGT->new( $self->port_formatter()->as_integer($port) )
+	  : Farly::Transport::PortGT->new( $port );
 }
 
 sub PORT_LT {
 	my ( $self, $node ) = @_;
-	$self->PORT_RANGE($node);
+
+	my $port = $node->{'__VALUE__'};
+
+	$node->{'__VALUE__'} = defined( $self->port_formatter()->as_integer($port) )
+	  ? Farly::Transport::PortLT->new( $self->port_formatter()->as_integer($port) )
+	  : Farly::Transport::PortLT->new( $port );
 }
 
 sub _new_ObjectRef {
@@ -239,8 +249,8 @@ sub _new_ObjectRef {
 
 	my $ce = Object::KVC::HashRef->new();
 
-	$ce->set( "ENTRY", Object::KVC::String->new($entry) );
-	$ce->set( "ID",    Object::KVC::String->new($value) );
+	$ce->set( 'ENTRY', Object::KVC::String->new($entry) );
+	$ce->set( 'ID',    Object::KVC::String->new($value) );
 
 	return $ce;
 }
@@ -264,9 +274,9 @@ sub AUTOLOAD {
 	  : confess "$self error: value not found in node $token_type\n";
 
 	my $object;
-	if ( $class eq "Object::KVC::HashRef" ) {
+	if ( $class eq 'Object::KVC::HashRef' ) {
 
-		#need to set "ENTRY" and "ID" properties
+		#need to set 'ENTRY' and 'ID' properties
 		$object = $self->_new_ObjectRef( $token_type, $value );
 	}
 	else {

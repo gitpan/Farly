@@ -9,10 +9,10 @@ WriteMakefile(
     VERSION_FROM      => 'lib/Farly.pm',
     PREREQ_PM         => {
 		%prereq,
-    		'Object::KVC'       => 0.04,
-    		'Parse::RecDescent' => 1.965001,
-    		'Log::Log4perl'     => 1.35,
-    		'Template'          => 2.22,	
+    	'Object::KVC'       => 0.04,
+    	'Parse::RecDescent' => 1.965001,
+    	'Log::Log4perl'     => 1.35,
+    	'Template'          => 2.22,	
     },
     ($] >= 5.005 ?
       (ABSTRACT  => 'Farly - Firewall Analysis and Rewrite LibrarY',

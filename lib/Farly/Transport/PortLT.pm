@@ -1,39 +1,16 @@
-package Farly::Builder;
+package Farly::Transport::PortLT;
 
 use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Log::Log4perl qw(get_logger);
+use Farly::Transport::Port;
 
+our @ISA = qw(Farly::Transport::Port);
 our $VERSION = '0.08';
 
-sub new {
-	my $class  = shift;
-
-	my $self   = {
-		FILE      => undef,
-		CONTAINER => undef,
-	};
-	bless( $self, $class );
-
-	my $logger = get_logger(__PACKAGE__);
-	$logger->info("$self NEW ");
-
-	return $self;
-}
-
-sub set_file {
-	my ($self, $file) = @_;
-
-	$self->{FILE} = $file;
-
-	my $logger = get_logger(__PACKAGE__);
-	$logger->info( "$self SET FILE TO ", $self->{FILE} );
-}
-
-sub file {
-	return $_[0]->{FILE};
+sub first {
+	return 1;
 }
 
 1;
@@ -41,18 +18,26 @@ __END__
 
 =head1 NAME
 
-Farly::Builder - Builder base class
+Farly::Transport::Port - TCP or UDP port number 'less than' class
 
 =head1 DESCRIPTION
 
-Farly::Builder is the Builder base class. Defines the
-vendor independent Builder interface.
+This class represents TCP or UDP port numbers less than the given
+port number.
 
-Farly::Builder is used by vendor specific builders only.
+Inherits from Farly::Transport::Port.
 
-=head1 COPYRIGHT AND LICENCE
+=head1 METHODS
 
-Farly::Builder
+=head2 first()
+
+Returns the port number
+
+  $8_bit_int = $port->first();
+
+=head1 COPYRIGHT AND LICENSE
+
+Farly::Transport::PortLT
 Copyright (C) 2012  Trystan Johnson
 
 This program is free software: you can redistribute it and/or modify

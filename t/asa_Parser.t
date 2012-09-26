@@ -183,7 +183,7 @@ $expected = {
 	'object'                  => 'service',
 	'object_service_dst'      => '443',
 	'object_id'               => 'web_https',
-	'object_service_src'      => '1024 65535'
+	'object_service_src'      => '1024'
 };
 
 ok( equals( $expected, $actual ), "object service src dst" );
@@ -495,7 +495,7 @@ $actual = visit($tree);
 $expected = {
 	'acl_action'   => 'permit',
 	'acl_id'       => 'acl-outside',
-	'acl_dst_port' => 'www 65535',
+	'acl_dst_port' => 'www',
 	'acl_src_port' => '1024 65535',
 	'acl_dst_ip'   => 'server1',
 	'acl_protocol' => 'ip',

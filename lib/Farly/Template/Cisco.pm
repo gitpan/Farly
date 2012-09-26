@@ -8,7 +8,7 @@ use File::Spec;
 use Template;
 use Log::Log4perl qw(get_logger);
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 our ( $volume, $dir, $file ) = File::Spec->splitpath( $INC{'Farly/Template/Cisco.pm'} );
 
 sub new {
@@ -17,6 +17,7 @@ sub new {
 	my $self = {
 		FILE     => $file,
 		TEMPLATE => undef,
+		TEXT     => undef,  #set this to use text port and protocol names
 	};
 
 	bless $self, $class;
@@ -28,6 +29,10 @@ sub new {
 
 	return $self;
 }
+
+sub _template { return $_[0]->{TEMPLATE}; }
+sub _file { return $_[0]->{FILE}; }
+sub _text { $_[0]->{TEXT} }
 
 sub _init {
 	my ($self, %args) = @_;
@@ -43,8 +48,22 @@ sub _init {
 	) or die "$Template::ERROR\n";
 }
 
-sub _template { return $_[0]->{TEMPLATE}; }
-sub _file { return $_[0]->{FILE}; }
+sub use_text {
+	my ($self, $flag) = @_;
+	$self->{TEXT} = $flag;
+}
+
+# port_formatter     => Farly::ASA::PortFormatter->new(),
+# protocol_formatter => Farly::ASA::ProtocolFormatter->new(),
+# icmp_formatter     => Farly::ASA::ICMPFormatter->new(),
+
+sub set_formatters {
+	my ($self, $formatter) = @_;
+	foreach my $key ( keys %$formatter ) {
+		confess "invalid formatters" if ( $key !~ /port_formatter|protocol_formatter|icmp_formatter/ );
+		$self->{$key} = $formatter->{$key};
+	}
+}
 
 sub _value_format {
 	my ( $self, $value ) = @_;
@@ -55,13 +74,69 @@ sub _value_format {
 
 		$string = "host " . $value->as_string();
 	}
-	elsif ( $value->isa('Farly::Transport::Port') ) {
+	elsif ( $value->isa('Farly::Transport::Protocol') ) {
 
-		$string = "eq ".$value->as_string();
+		if ( $self->_text ) {
+			$string = defined( $self->{protocol_formatter}->as_string( $value->as_string() ) )
+			  ? $self->{protocol_formatter}->as_string( $value->as_string() )
+			  : $value->as_string();			
+		}
+		else {
+			$string = $value->as_string();
+		}
+	}
+	elsif ( $value->isa('Farly::Transport::PortGT') ) {
+		$string = "gt ";
+		if ( $self->_text ) {
+			$string .= defined( $self->{port_formatter}->as_string( $value->as_string() ) )
+			  ? $self->{port_formatter}->as_string( $value->as_string() )
+			  : $value->as_string();
+		}
+		else {	  
+			$string .= $value->as_string();
+		}
+	}
+	elsif ( $value->isa('Farly::Transport::PortLT') ) {
+		$string = "lt ";
+		if ( $self->_text ) {
+			$string .= defined( $self->{port_formatter}->as_string( $value->as_string() ) )
+			  ? $self->{port_formatter}->as_string( $value->as_string() )
+			  : $value->as_string();
+		}
+		else {	  
+			$string .= $value->as_string();
+		}
+	}		
+	elsif ( $value->isa('Farly::Transport::Port') ) {
+		$string = "eq ";
+		if ( $self->_text ) {
+			$string .= defined( $self->{port_formatter}->as_string( $value->as_string() ) )
+			  ? $self->{port_formatter}->as_string( $value->as_string() )
+			  : $value->as_string();
+		}
+		else {	  
+			$string .= $value->as_string();
+		}
 	}
 	elsif ( $value->isa('Farly::Transport::PortRange') ) {
 
-		$string .= "range ".$value->as_string();
+		$string = "range ";
+
+		if ( $self->_text ) {
+			
+			$string .= defined( $self->{port_formatter}->as_string( $value->first() ) )
+			  ? $self->{port_formatter}->as_string( $value->first() )
+			  : $value->first();
+			
+			$string .= " ";
+			
+			$string .= defined( $self->{port_formatter}->as_string( $value->last() ) )
+			  ? $self->{port_formatter}->as_string( $value->last() )
+			  : $value->last();
+		}
+		else {
+			$string .= $value->as_string();
+		}
 	}
 	elsif ( $value->isa('Object::KVC::HashRef') ) {
 
@@ -81,24 +156,25 @@ sub _format {
 	my ( $self, $ce ) = @_;
 
 	my $GROUP_REF = Object::KVC::HashRef->new();
-	$GROUP_REF->set( "ENTRY", Object::KVC::String->new("GROUP") );
+	$GROUP_REF->set( 'ENTRY', Object::KVC::String->new('GROUP') );
 
 	my $OBJECT_REF = Object::KVC::HashRef->new();
-	$OBJECT_REF->set( "ENTRY", Object::KVC::String->new("OBJECT") );
+	$OBJECT_REF->set( 'ENTRY', Object::KVC::String->new('OBJECT') );
 
 	my $IF_REF = Object::KVC::HashRef->new();
-	$IF_REF->set( "ENTRY", Object::KVC::String->new("INTERFACE") );
+	$IF_REF->set( 'ENTRY', Object::KVC::String->new('INTERFACE') );
 
 	my $INTERFACE = Object::KVC::Hash->new();
-	$INTERFACE->set( "ENTRY", Object::KVC::String->new("INTERFACE") );
+	$INTERFACE->set( 'ENTRY', Object::KVC::String->new('INTERFACE') );
 
-	my $RULE  = Object::KVC::String->new("RULE");
+	my $RULE  = Object::KVC::String->new('RULE');
 
-	my $ALL = Farly::Transport::PortRange->new("1 65535");
+	my $ALL = Farly::Transport::PortRange->new('1 65535');
+	my $ANY_ICMP_TYPE = Farly::IPv4::ICMPType->new( -1 );
 
 	my $hash;
 
-	#interface ip addresses should not be prefixed with "host"
+	#interface ip addresses should not be prefixed with 'host'
 	if ( $ce->matches( $INTERFACE ) ) {
 		foreach my $key ( $ce->get_keys() ) {
 			$hash->{$key} = $ce->get($key)->as_string();
@@ -113,28 +189,41 @@ sub _format {
 		my $prefix;
 		my $string;
 
+		# skip port range 1 - 65535
 		if ( $value->equals($ALL) ) {
+			next;
+		}
+
+		# skip default ICMP type '255'
+		if ( $value->equals($ANY_ICMP_TYPE) ) {
 			next;
 		}
 
 		if ( $value->isa('Object::KVC::HashRef') ) {
 
 			if ( $value->matches($GROUP_REF) ) {
-				if ( $ce->get("ENTRY")->equals($RULE) ) {
-					$prefix = "object-group";
+				if ( $ce->get('ENTRY')->equals($RULE) ) {
+					$prefix = 'object-group';
 				}
 			}
 			elsif ( $value->matches($OBJECT_REF) ) {
-				$prefix = "object";
+				$prefix = 'object';
 			}
 			elsif ( $value->matches($IF_REF) ) {
-				$prefix = "interface";
+				$prefix = 'interface';
 			}
 		}
 
 		$string = defined($prefix)
-		  ? $prefix . " " . $self->_value_format($value)
+		  ? $prefix . ' ' . $self->_value_format($value)
 		  : $self->_value_format($value);
+
+		if ( $self->_text && $key eq 'ICMP_TYPE' ) {
+			
+			$string = defined( $self->{icmp_formatter}->as_string( $value->as_string() ) )
+			  ? $self->{icmp_formatter}->as_string( $value->as_string() )
+			  : $value->as_string();
+		}
 
 		$hash->{ $key } = $string;
 	}
@@ -182,6 +271,26 @@ Valid device types:
 Prints the current Farly object in Cisco format.
 
   $template->as_string( $object );
+
+=head2 set_formatters( \%formatters )
+
+Set the device specific integer to string formatters to use. Each
+of 'port_formatter', 'protocol_formatter' and 'icmp_formatter' must
+be specified.
+
+  my $formatters = {
+    'port_formatter'     => Farly::ASA::PortFormatter->new(),
+    'protocol_formatter' => Farly::ASA::ProtocolFormatter->new(),
+    'icmp_formatter'     => Farly::ASA::ICMPFormatter->new(),
+  };
+
+  $template->set_formatters($formatters);
+
+=head2 use_text( 0|1 )
+
+Configure the object to use the specified value formatters
+
+  $template->use_text(1);
 
 =head1 COPYRIGHT AND LICENCE
 

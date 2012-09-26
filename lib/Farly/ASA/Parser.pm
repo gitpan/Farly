@@ -7,7 +7,7 @@ use Carp;
 use Log::Log4perl qw(get_logger);
 use Parse::RecDescent;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 $::RD_ERRORS = 1; # Make sure the parser dies when it encounters an error
 #$::RD_WARN   = 1; # Enable warnings. This will warn on unused rules &c.
@@ -68,22 +68,22 @@ startrule :
 	|	<error>
 
 hostname :
-		"hostname" STRING
+		'hostname' STRING
 
 #
 # names
 #
 
 names :
-		"name" IPADDRESS NAME "description" REMARKS
-	|   "name" IPADDRESS NAME
+		'name' IPADDRESS NAME 'description' REMARKS
+	|   'name' IPADDRESS NAME
 
 #
 # interfaces
 # 
 
 interface :
-		"interface" STRING interface_options
+		'interface' STRING interface_options
 
 interface_options :
 		if_name
@@ -92,13 +92,13 @@ interface_options :
 	|	EOL
 
 if_name :
-		"nameif" STRING interface_options
+		'nameif' STRING interface_options
 
 sec_level :
-		"security-level" DIGIT interface_options
+		'security-level' DIGIT interface_options
 
 if_addr :
-		"ip address" if_ip interface_options
+		'ip address' if_ip interface_options
 
 if_ip :
 		IPADDRESS if_mask
@@ -109,15 +109,15 @@ if_mask :
 	|	MASK
 
 if_standby :
-		"standby" IPADDRESS
-	|	"standby" NAME
+		'standby' IPADDRESS
+	|	'standby' NAME
 
 #
 # objects
 #
 
 object :
-		"object" OBJECT_TYPE object_id
+		'object' OBJECT_TYPE object_id
 
 object_id : 
 		STRING object_address
@@ -129,16 +129,16 @@ object_address :
 	|	object_network
 
 object_host :
-		"host" IPADDRESS
+		'host' IPADDRESS
 
 object_range :
-		"range" IPRANGE
+		'range' IPRANGE
 
 object_network :
-		"subnet" IPNETWORK
+		'subnet' IPNETWORK
 
 object_service :
-		"service" object_service_protocol
+		'service' object_service_protocol
 
 object_service_protocol :
 		PROTOCOL object_service_src
@@ -147,11 +147,11 @@ object_service_protocol :
 	|	PROTOCOL
 
 object_service_src :
-		"source" port object_service_dst
-	|	"source" port
+		'source' port object_service_dst
+	|	'source' port
 
 object_service_dst :
-		"destination" port
+		'destination' port
 
 object_icmp :
 		ICMP_TYPE
@@ -161,7 +161,7 @@ object_icmp :
 #
 
 object_group :
-		"object-group" GROUP_TYPE og_id
+		'object-group' GROUP_TYPE og_id
 
 og_id :
 		STRING og_object
@@ -180,25 +180,25 @@ og_object :
 	|	og_service_object
 
 og_network_object :
-		"network-object" address
+		'network-object' address
 
 og_port_object :
-		"port-object" port
+		'port-object' port
 
 og_group_object :
-		"group-object" GROUP_REF
+		'group-object' GROUP_REF
 
 og_protocol_object :
-		"protocol-object" PROTOCOL
+		'protocol-object' PROTOCOL
 
 og_description :
-		"description" REMARKS
+		'description' REMARKS
 
 og_icmp_object :
-		"icmp-object" ICMP_TYPE
+		'icmp-object' ICMP_TYPE
 
 og_service_object :
-		"service-object" og_so_protocol
+		'service-object' og_so_protocol
 
 og_so_protocol :
 		PROTOCOL og_so_dst_port
@@ -207,11 +207,11 @@ og_so_protocol :
 	|	PROTOCOL
 
 og_so_src_port : 
-		"source" port og_so_dst_port
-	|	"source" port
+		'source' port og_so_dst_port
+	|	'source' port
 
 og_so_dst_port : 
-		"destination" port
+		'destination' port
 	|	port
 
 #
@@ -219,7 +219,7 @@ og_so_dst_port :
 #
 
 access_list :
-		"access-list" acl_id
+		'access-list' acl_id
 
 acl_id :
 		STRING acl_line
@@ -227,15 +227,15 @@ acl_id :
 	|	STRING acl_action
 
 acl_line :
-		"line" DIGIT acl_type
-	|	"line" DIGIT acl_action
+		'line' DIGIT acl_type
+	|	'line' DIGIT acl_action
 
 acl_type :
 		ACL_TYPES acl_action
 	|	acl_remark
 
 acl_remark :
-		"remark" REMARKS
+		'remark' REMARKS
 
 acl_action :
 		ACTIONS acl_protocol
@@ -246,9 +246,9 @@ acl_action :
 
 acl_protocol :
 		PROTOCOL acl_src_ip
-	|	"OG_PROTOCOL" GROUP_REF acl_src_ip
-	|	"OG_SERVICE" GROUP_REF acl_src_ip
-	|	"object" OBJECT_REF acl_src_ip
+	|	'OG_PROTOCOL' GROUP_REF acl_src_ip
+	|	'OG_SERVICE' GROUP_REF acl_src_ip
+	|	'object' OBJECT_REF acl_src_ip
 
 #
 # access-list source IP addresses
@@ -286,7 +286,7 @@ acl_dst_port :
 #
 
 acl_icmp_type :
-		"OG_ICMP-TYPE" GROUP_REF
+		'OG_ICMP-TYPE' GROUP_REF
 	|   ICMP_TYPE
 
 #
@@ -301,20 +301,20 @@ acl_options :
 	|	<error>
 
 acl_logging :
-		"log" acl_log_level
-	|	"log" acl_time_range
+		'log' acl_log_level
+	|	'log' acl_time_range
 {
 	$item{'LOG_LEVEL'} = bless( {'__VALUE__' => '6'}, 'LOG_LEVEL' );
 	bless \%item, $item[0];
 }
 
-	|	"log" acl_inactive
+	|	'log' acl_inactive
 {
 	$item{'LOG_LEVEL'} = bless( {'__VALUE__' => '6'}, 'LOG_LEVEL' );
 	bless \%item, $item[0];
 }
 
-	|	"log"
+	|	'log'
 {
 	$item{'LOG_LEVEL'} = bless( {'__VALUE__' => '6'}, 'LOG_LEVEL' );
 	bless \%item, $item[0];
@@ -327,13 +327,13 @@ acl_log_level :
 	|	LOG_LEVEL
 
 acl_log_interval :
-		"interval" DIGIT acl_time_range
-	|	"interval" DIGIT acl_inactive
-	|	"interval" DIGIT
+		'interval' DIGIT acl_time_range
+	|	'interval' DIGIT acl_inactive
+	|	'interval' DIGIT
 
 acl_time_range :
-		"time-range" STRING acl_inactive
-	|	"time-range" STRING
+		'time-range' STRING acl_inactive
+	|	'time-range' STRING
 
 acl_inactive :
 		ACL_STATUS
@@ -343,7 +343,7 @@ acl_inactive :
 #
 
 access_group :
-		"access-group" ag_id
+		'access-group' ag_id
 
 ag_id :
 		RULE_REF ag_direction
@@ -356,7 +356,7 @@ ag_direction :
 		ACL_DIRECTION ag_interface
 
 ag_interface :
-		"interface" IF_REF
+		'interface' IF_REF
 
 #
 # IP address types
@@ -365,14 +365,14 @@ ag_interface :
 # be used to specify ports 
 
 address :
-		"host" IPADDRESS
-	|	"host" NAME
+		'host' IPADDRESS
+	|	'host' NAME
 	|	IPNETWORK
 	|	NAMED_NET
 	|	ANY
-	|	"object" OBJECT_REF
-	|	"interface" IF_REF
-	|	"OG_NETWORK" GROUP_REF
+	|	'object' OBJECT_REF
+	|	'interface' IF_REF
+	|	'OG_NETWORK' GROUP_REF
 
 #
 # port types
@@ -381,25 +381,25 @@ address :
 port :
 		port_eq
 	|	port_range
-	|	"OG_SERVICE" GROUP_REF
+	|	'OG_SERVICE' GROUP_REF
 	|	port_gt
 	|	port_lt
 	|	port_neq
 
 port_eq :
-	"eq" PORT_ID
+	'eq' PORT_ID
 
 port_range :
-	"range" PORT_RANGE
+	'range' PORT_RANGE
 
 port_gt :
-	"gt" PORT_GT
+	'gt' PORT_GT
 
 port_lt :
-	"lt" PORT_LT
+	'lt' PORT_LT
 
 port_neq :
-	"neq" <error: neq is unsupported>
+	'neq' <error: neq is unsupported>
 
 #
 # Token Definitions
@@ -427,14 +427,14 @@ RULE_REF :
 		/\S+/
 
 GROUP_TYPE :
-		"service" | "icmp-type" | "network" | "protocol"
+		'service' | 'icmp-type' | 'network' | 'protocol'
 
 OBJECT_TYPE :			
-			"network"
-		|	"service"
+			'network'
+		|	'service'
 
 ANY:
-		"any"
+		'any'
 
 IPADDRESS :
 		/((\d{1,3})((\.)(\d{1,3})){3})/
@@ -443,75 +443,69 @@ MASK :
 		/(255|254|252|248|240|224|192|128|0)((\.)(255|254|252|248|240|224|192|128|0)){3}/
 
 IPNETWORK :
-		/((\d{1,3})((\.)(\d{1,3})){3}) ((255|254|252|248|240|224|192|128|0)((\.)(255|254|252|248|240|224|192|128|0)){3})/
+		/((\d{1,3})((\.)(\d{1,3})){3})\s+((255|254|252|248|240|224|192|128|0)((\.)(255|254|252|248|240|224|192|128|0)){3})/
 
 IPRANGE :
-		/((\d{1,3})((\.)(\d{1,3})){3}) ((\d{1,3})((\.)(\d{1,3})){3})/
+		/((\d{1,3})((\.)(\d{1,3})){3})\s+((\d{1,3})((\.)(\d{1,3})){3})/
 
 NAMED_NET :
-		/((^|\s[a-zA-Z])(\.|[0-9a-zA-Z_-]+)+) ((255|254|252|248|240|224|192|128|0)((\.)(255|254|252|248|240|224|192|128|0)){3})/
+		/((^|\s[a-zA-Z])(\.|[0-9a-zA-Z_-]+)+)\s+((255|254|252|248|240|224|192|128|0)((\.)(255|254|252|248|240|224|192|128|0)){3})/
 
 PROTOCOL :
-		/\d+/ | "ah" | "eigrp" | "esp" | "gre" | "icmp" | "icmp6" | "igmp" 
-	| "igrp" | "ip" | "ipinip" | "ipsec" | "nos" | "ospf" | "pcp" 
-	| "pim" | "pptp" | "snp" | "tcp" | "udp"
+		/\d+/ | 'ah' | 'eigrp' | 'esp' | 'gre' | 'icmp' | 'icmp6' | 'igmp' 
+	| 'igrp' | 'ip' | 'ipinip' | 'ipsec' | 'nos' | 'ospf' | 'pcp' 
+	| 'pim' | 'pptp' | 'snp' | 'tcp' | 'udp'
 
 GROUP_PROTOCOL :
-		"tcp-udp" | "tcp" | "udp"
+		'tcp-udp' | 'tcp' | 'udp'
 
 ICMP_TYPE : 
-		/\d+/ | "alternate-address" | "conversion-error" | "echo-reply" | "echo"
-	| "information-reply" | "information-request" | "mask-reply" | "mask-request"
-	| "mobile-redirect" | "parameter-problem" | "redirect" | "router-advertisement"
-	| "router-solicitation" | "source-quench" | "time-exceeded" | "timestamp-reply"
-	| "timestamp-request" | "traceroute" | "unreachable"
+		/\d+/ | 'alternate-address' | 'conversion-error' | 'echo-reply' | 'echo'
+	| 'information-reply' | 'information-request' | 'mask-reply' | 'mask-request'
+	| 'mobile-redirect' | 'parameter-problem' | 'redirect' | 'router-advertisement'
+	| 'router-solicitation' | 'source-quench' | 'time-exceeded' | 'timestamp-reply'
+	| 'timestamp-request' | 'traceroute' | 'unreachable'
 
 PORT_ID :
 		/\S+/
 
 PORT_GT :
 		/\S+/
-{
-	bless {__VALUE__=>"$item[1] 65535"}, $item[0]
-}
 
 PORT_LT :
 		/\S+/
-{
-	bless {__VALUE__=>"1 $item[1]"}, $item[0]
-}
 
 PORT_RANGE :
-		/\S+ \S+/
+		/\S+\s+\S+/
 
 ACTIONS :
-		"permit"
-	|	"deny"
+		'permit'
+	|	'deny'
 
 ACL_TYPES :
-		"extended"
+		'extended'
 
 REMARKS :
 		/.*$/
 
 ACL_DIRECTION :
-		"in"
-	|	"out"
+		'in'
+	|	'out'
 
 ACL_GLOBAL :
-		"global"
+		'global'
 
 ACL_STATUS :
-		"inactive"
+		'inactive'
 
 STATE :		
-    	"enable"
-	|	"disable"
+    	'enable'
+	|	'disable'
 
 LOG_LEVEL :
-		/\d+/ | "emergencies" | "alerts" | "critical" | "errors" 
-	| "warnings" | "notifications" | "informational" | "debugging"
-	| "disable"
+		/\d+/ | 'emergencies' | 'alerts' | 'critical' | 'errors' 
+	| 'warnings' | 'notifications' | 'informational' | 'debugging'
+	| 'disable'
 
 EOL :
 		/$/	

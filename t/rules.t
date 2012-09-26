@@ -11,9 +11,11 @@ my $path = $volume.$dir;
 
 use Farly;
 my $importer = Farly->new();
+
+
 my $container = $importer->process( "ASA", "$path/test.cfg" );
 
-ok( $container->size() == 39, "import");
+ok( $container->size() == 41, "import");
 
 use Farly::Rules;
 
@@ -25,4 +27,4 @@ ok( defined($rule_expander), "constructor" );
 
 my $expanded_rules = $rule_expander->expand_all();
 
-ok( $expanded_rules->size == 15, "expand_all" );
+ok( $expanded_rules->size == 17, "expand_all" );

@@ -33,3 +33,13 @@
 
 0.07 - June, 2012
   - Fixed documentation mistakes
+
+0.08 - September, 2012
+  - Added port 'gt' and port 'lt' support, Farly::Transport::PortGT 
+    and Farly::Transport::PortLT
+  - Added Farly::IPv4::ICMPType 
+  - Added integer to text formatter plugin's to Farly::Template::Cisco
+  - Added Farly::Opts::Search, Farly::Remove::Rule, Farly::Remove::Address
+    and corresponding unit tests
+  - First release of "Farly Script Tools" f_search.pl, f_analyze.pl, 
+    f_remove.pl

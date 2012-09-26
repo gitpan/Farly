@@ -168,4 +168,3 @@ chomp $actual;
 ok( $filter->isa('Farly::ASA::Filter'), "new" );
 
 ok( $actual eq $expected , "filter");
-

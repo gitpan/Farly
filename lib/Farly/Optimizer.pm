@@ -8,7 +8,7 @@ use Log::Log4perl qw(get_logger);
 
 use Farly::Template::Cisco;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 sub new {
 	my ( $class, $rule_list ) = @_;
@@ -28,6 +28,7 @@ sub new {
 		P_ACTION  => "permit",
 		D_ACTION  => "deny",
 		PROTOCOLS => [ 0, 6, 17 ],
+		VERBOSE   => undef,
 	};
 
 	bless $self, $class;
@@ -51,6 +52,12 @@ sub removed   { return $_[0]->{REMOVED}; }
 sub p_action  { return $_[0]->{P_ACTION}; }
 sub d_action  { return $_[0]->{D_ACTION}; }
 sub protocols { return $_[0]->{PROTOCOLS}; }
+sub _is_verbose { return $_[0]->{VERBOSE}; }
+
+sub verbose { 
+	my ( $self, $flag ) = @_;
+	$self->{VERBOSE} = $flag; 
+}
 
 sub set_permit_action {
 	my ( $self, $action ) = @_;
@@ -71,8 +78,11 @@ sub set_deny_action {
 #check if its a single acl
 sub run {
 	my ($self) = @_;
+	
 	$self->_do_search();
 	$self->_optimize();
+
+	$self->{OPTIMIZED} = $self->_re_add();
 }
 
 sub _is_valid_rule_set {
@@ -107,6 +117,7 @@ sub _do_search {
 
 	my $search = Object::KVC::Hash->new();
 
+	# 0, 6, 17 or ip, tcp, udp
 	foreach my $protocol ( @{ $self->protocols } ) {
 
 		$search->set( "PROTOCOL", Farly::Transport::Protocol->new($protocol) );
@@ -119,6 +130,41 @@ sub _do_search {
 	}
 }
 
+sub _re_add {
+	my ($self) = @_;
+
+	my $IP   = Farly::Transport::Protocol->new('0');
+	my $TCP  = Farly::Transport::Protocol->new('6');
+	my $UDP  = Farly::Transport::Protocol->new('17');
+	
+	#add non ip, tcp, and udp rules back in
+	foreach my $rule ( $self->original->iter() ) {
+	
+		if ( $rule->has_defined('COMMENT') ) {
+			$self->optimized->add( $rule );
+		 	next;
+		}
+
+		if ( ! ( $rule->get('PROTOCOL')->equals($IP) ||
+			  $rule->get('PROTOCOL')->equals($TCP) ||
+			 $rule->get('PROTOCOL')->equals($UDP) ) )
+		{
+			$self->optimized->add( $rule );
+		 	next;
+		}
+	}
+
+	my @full_list = sort _ascending_LINE $self->optimized->iter();
+	
+	my $new_optimized = Object::KVC::List->new();
+	
+	foreach my $rule ( @full_list ) {
+		$new_optimized->add($rule);
+	}	
+
+	return $new_optimized;
+}
+
 # sort rules in ascending order by line number
 sub _ascending_LINE {
 	$a->get("LINE")->number() <=> $b->get("LINE")->number();
@@ -126,7 +172,7 @@ sub _ascending_LINE {
 
 # sort rules in ascending order so that current can contain next
 # but next can't contain current
-sub _ascending {
+sub _ascending_l4 {
 	     $a->get("DST_IP")->first() <=> $b->get("DST_IP")->first()
 	  || $b->get("DST_IP")->last() <=> $a->get("DST_IP")->last()
 	  || $a->get("SRC_IP")->first() <=> $b->get("SRC_IP")->first()
@@ -350,6 +396,10 @@ sub _log_remove {
 		$string .= "\n";
 	}
 
+	if ( $self->_is_verbose() ) {
+		print $string;
+	}
+
 	$logger->info("analysis result :\n$string");
 }
 
@@ -391,8 +441,8 @@ sub _optimize {
 	$self->_log_remove( \@arr_permits, \%remove );
 
 	# sort the rule in ascending order
-	@arr_permits = sort _ascending $self->_permits->iter();
-	@arr_denys   = sort _ascending $self->_denies->iter();
+	@arr_permits = sort _ascending_l4 $self->_permits->iter();
+	@arr_denys   = sort _ascending_l4 $self->_denies->iter();
 
 	$logger->info("Checking for permit rule redundancies...");
 	%remove = $self->_redundant( \@arr_permits, \@arr_denys );
@@ -401,7 +451,7 @@ sub _optimize {
 	$self->_log_remove( \@arr_permits, \%remove );
 
 	# sort the permits again
-	@arr_permits = sort _ascending $self->_permits->iter();
+	@arr_permits = sort _ascending_l4 $self->_permits->iter();
 
 	$logger->info("Checking for deny rule redundancies...");
 	%remove = $self->_redundant( \@arr_denys, \@arr_permits );
@@ -481,6 +531,12 @@ Logged rules are currently displayed in Cisco ASA format.
 The constructor. A single expanded rule list is required.
 
   $optimizer = Farly::Optimizer->new( $expanded_rules<Object::KVC::List> );
+
+=head2 verbose()
+
+Have the optimizer all analysis results in Cisco ASA format
+
+	$optimizer->verbose(1);
 
 =head2 run()
 

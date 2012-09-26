@@ -7,7 +7,7 @@ use Carp;
 use Farly::Transport::Object;
 
 our @ISA = qw(Farly::Transport::Object);
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 sub new {
 	my ( $class, $port ) = @_;
@@ -83,7 +83,7 @@ Returns the port number
 
 Returns the port number
 
-  $8_bit_int = $port->first();
+  $8_bit_int = $port->last();
 
 =head2 as_string()
 

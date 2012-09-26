@@ -7,7 +7,7 @@ Log::Log4perl->easy_init($ERROR);
 use Farly;
 use Farly::ASA::Builder;
 use Farly::Template::Cisco;
-use Test::Simple tests => 1;
+use Test::Simple tests => 2;
 
 my $container = Object::KVC::List->new();
 
@@ -175,6 +175,40 @@ $ce12->set( "OBJECT_TYPE",    Object::KVC::String->new("PORT") );
 
 $container->add($ce12);
 
+my $ce13 = Object::KVC::Hash->new();
+
+$ce13->set( "ENTRY",        Object::KVC::String->new("RULE") );
+$ce13->set( "ID",           Object::KVC::String->new("outside-in") );
+$ce13->set( "LINE",         Object::KVC::String->new("1") );
+$ce13->set( "ACTION",       Object::KVC::String->new("permit") );
+$ce13->set( "PROTOCOL",     Farly::Transport::Protocol->new(6) );
+$ce13->set( "SRC_IP",       Farly::IPv4::Network->new("0.0.0.0 0.0.0.0") );
+$ce13->set( "SRC_PORT",     Farly::Transport::PortGT->new("1024") );
+$ce13->set( "DST_IP",       Farly::IPv4::Address->new("192.168.1.1") );
+$ce13->set( "DST_PORT",     Farly::Transport::Port->new("443") );
+$ce13->set( "LOG_LEVEL",    Object::KVC::String->new("6") );
+$ce13->set( "LOG_INTERVAL", Object::KVC::String->new("600") );
+$ce13->set( "STATUS",       Object::KVC::String->new("inactive") );
+
+$container->add($ce13);
+
+my $ce14 = Object::KVC::Hash->new();
+
+$ce14->set( "ENTRY",        Object::KVC::String->new("RULE") );
+$ce14->set( "ID",           Object::KVC::String->new("outside-in") );
+$ce14->set( "LINE",         Object::KVC::String->new("1") );
+$ce14->set( "ACTION",       Object::KVC::String->new("permit") );
+$ce14->set( "PROTOCOL",     Farly::Transport::Protocol->new(6) );
+$ce14->set( "SRC_IP",       Farly::IPv4::Network->new("0.0.0.0 0.0.0.0") );
+$ce14->set( "SRC_PORT",     Farly::Transport::PortGT->new("1024") );
+$ce14->set( "DST_IP",       Farly::IPv4::Address->new("192.168.1.1") );
+$ce14->set( "DST_PORT",     Farly::Transport::PortLT->new("443") );
+$ce14->set( "LOG_LEVEL",    Object::KVC::String->new("6") );
+$ce14->set( "LOG_INTERVAL", Object::KVC::String->new("600") );
+$ce14->set( "STATUS",       Object::KVC::String->new("inactive") );
+
+$container->add($ce14);
+
 my $string = '';
 my $template = Farly::Template::Cisco->new( 'ASA', 'OUTPUT' => \$string );
 
@@ -204,6 +238,53 @@ access-group outside-in in interface outside
 no object service test-srv2
 no access-list outside-in permit 6 any object-group high-ports host 192.168.1.1 eq 443 log interval 600 inactive
 no object-group service ms-rpc-locator tcp
+access-list outside-in line 1 permit 6 any gt 1024 host 192.168.1.1 eq 443 log interval 600 inactive
+access-list outside-in line 1 permit 6 any gt 1024 host 192.168.1.1 lt 443 log interval 600 inactive
 };
 
-ok( $string eq $expected, "template" );
+ok( $string eq $expected, "template - no formatting" );
+
+$string = '';
+$template = Farly::Template::Cisco->new( 'ASA', 'OUTPUT' => \$string );
+
+my $f = {
+	'port_formatter'     => Farly::ASA::PortFormatter->new(),
+	'protocol_formatter' => Farly::ASA::ProtocolFormatter->new(),
+	'icmp_formatter'     => Farly::ASA::ICMPFormatter->new(),
+};
+
+$template->use_text(1);
+$template->set_formatters($f);
+
+foreach my $ce ( $container->iter() ) {
+	$template->as_string($ce);
+	$string .= "\n";
+}
+
+$expected = q{object-group service ms-rpc-locator tcp
+no port-object eq 445
+object-group network ms-rpc-server
+ group-object test1
+object-group service ms-rpc-srv
+ service-object tcp source range 1024 65535 destination eq www
+object-group service INFO_ADDRESS
+ service-object icmp mask-request
+object network test-srv2
+ host 10.1.2.3
+object service test-srv2
+ service tcp source range 1024 65535 destination eq www
+access-list outside-in line 1 permit tcp any object-group high-ports host 192.168.1.1 eq https log interval 600 inactive
+interface Vlan10
+ nameif outside
+ security-level 0
+ ip address 10.2.19.8 255.255.255.0 standby 10.2.19.9
+access-group outside-in in interface outside
+no object service test-srv2
+no access-list outside-in permit tcp any object-group high-ports host 192.168.1.1 eq https log interval 600 inactive
+no object-group service ms-rpc-locator tcp
+access-list outside-in line 1 permit tcp any gt 1024 host 192.168.1.1 eq https log interval 600 inactive
+access-list outside-in line 1 permit tcp any gt 1024 host 192.168.1.1 lt https log interval 600 inactive
+};
+
+ok( $string eq $expected, "template - formatted" );
+

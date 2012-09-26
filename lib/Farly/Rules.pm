@@ -7,7 +7,7 @@ use Carp;
 use Data::Dumper;
 use Log::Log4perl qw(get_logger);
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 sub new {
 	my ( $class, $fw ) = @_;
@@ -43,48 +43,59 @@ sub _init {
 	$self->{INDEX}->make_index( "ENTRY", "ID" );
 }
 
-sub _set_default_ports {
+sub _set_defaults {
 	my ( $self, $ce ) = @_;
 
 	my $logger = get_logger(__PACKAGE__);
 
 	my $RULE = Object::KVC::Hash->new();
-	$RULE->set( "ENTRY", Object::KVC::String->new("RULE") );
+	$RULE->set( 'ENTRY', Object::KVC::String->new('RULE') );
 
-	my $IP  = Farly::Transport::Protocol->new("0");
-	my $TCP = Farly::Transport::Protocol->new("6");
-	my $UDP = Farly::Transport::Protocol->new("17");
+	my $IP   = Farly::Transport::Protocol->new('0');
+	my $TCP  = Farly::Transport::Protocol->new('6');
+	my $UDP  = Farly::Transport::Protocol->new('17');
+	my $ICMP = Farly::Transport::Protocol->new('1');
 
 	#Check if the config entry is an access-list
 	if ( $ce->matches($RULE) ) {
 
-		return if ( $ce->has_defined("COMMENT") );
+		return if ( $ce->has_defined('COMMENT') );
 
 		#Check if the access-list protocol is ip, tcp or udp
-		if (   $ce->get("PROTOCOL")->equals($IP)
-			|| $ce->get("PROTOCOL")->equals($TCP)
-			|| $ce->get("PROTOCOL")->equals($UDP) )
+		if (   $ce->get('PROTOCOL')->equals($IP)
+			|| $ce->get('PROTOCOL')->equals($TCP)
+			|| $ce->get('PROTOCOL')->equals($UDP) )
 		{
 
 			$logger->debug("defaulting ports for $ce");
 
 			#if a srcport is not defined, define all ports
-			if ( !$ce->has_defined("SRC_PORT") ) {
+			if ( !$ce->has_defined('SRC_PORT') ) {
 
-				$ce->set( "SRC_PORT", Farly::Transport::PortRange->new( 1, 65535 ) );
-				$logger->debug( "SET SOURCE PORT ", $ce->get("SRC_PORT") );
+				$ce->set( 'SRC_PORT', Farly::Transport::PortRange->new( 1, 65535 ) );
+				$logger->debug( 'SET SOURCE PORT ', $ce->get('SRC_PORT') );
 			}
 
 			#if a dst port is not defined, define all ports
-			if ( !$ce->has_defined("DST_PORT") ) {
+			if ( !$ce->has_defined('DST_PORT') ) {
 
-				$ce->set( "DST_PORT", Farly::Transport::PortRange->new( 1, 65535 ) );
-				$logger->debug( "SET DST PORT ", $ce->get("DST_PORT") );
+				$ce->set( 'DST_PORT', Farly::Transport::PortRange->new( 1, 65535 ) );
+				$logger->debug( "SET DST PORT ", $ce->get('DST_PORT') );
+			}
+		}
+		elsif( $ce->get('PROTOCOL')->equals($ICMP) ) {
+			$logger->debug("defaulting ports for $ce");
+
+			#if an icmp type is not defined, define all icmp types as 255
+			if ( !$ce->has_defined('ICMP_TYPE') ) {
+
+				$ce->set( 'ICMP_TYPE', Farly::IPv4::ICMPType->new( -1 ) );
+				$logger->debug( 'SET ICMP_TYPE to -1 ');
 			}
 		}
 	}
 	else {
-		confess "_set_default_ports is for RULE objects only";
+		confess "_set_defaults is for RULE objects only";
 	}
 }
 
@@ -94,10 +105,10 @@ sub expand_all {
 
 	my $expanded = Object::KVC::List->new();
 
-	my $RULE = Object::KVC::String->new("RULE");
+	my $RULE = Object::KVC::String->new('RULE');
 
 	my $RULE_SEARCH = Object::KVC::Hash->new();
-	$RULE_SEARCH->set( "ENTRY", $RULE );
+	$RULE_SEARCH->set( 'ENTRY', $RULE );
 
 	my $rules = Object::KVC::List->new();
 
@@ -106,7 +117,7 @@ sub expand_all {
 	foreach my $ce ( $rules->iter() ) {
 		eval {
 			my $clone = $ce->clone();
-			$self->_expand( $clone, $expanded );
+			$self->expand( $clone, $expanded );
 		};
 		if ($@) {
 			confess "$@ \n expand failed for ", Dumper($ce), "\n";
@@ -125,7 +136,7 @@ sub expand_all {
 # { 'key' => Object::KVC::Hash }
 #   use "OBJECT" key/value in the raw RULE object
 
-sub _expand {
+sub expand {
 	my ( $self, $rule, $result ) = @_;
 	my $logger = get_logger(__PACKAGE__);
 
@@ -227,7 +238,7 @@ sub _expand {
 		}
 
 		if ($is_expanded) {
-			$self->_set_default_ports($ce);
+			$self->_set_defaults($ce);
 			$result->add($ce);
 		}
 	}
@@ -297,6 +308,14 @@ Returns an Object::KVC::List<Object::KVC::Hash> container of all
 raw expanded firewall rules in the current Farly firewall model.
 
   $expanded_ruleset = $rule_expander->expand_all();
+
+=head2 expand( $rule<Object::KVC::Hash>, $result<Object::KVC::List|Object::KVC::Set>)
+
+Returns the expanded version of the given firewall rule in the
+provided result container.
+
+  $expanded_rule = $rule_expander->expand( $rule );
+
 
 =head1 COPYRIGHT AND LICENCE
 
