@@ -8,7 +8,7 @@ use File::Spec;
 use Template;
 use Log::Log4perl qw(get_logger);
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our ( $volume, $dir, $file ) = File::Spec->splitpath( $INC{'Farly/Template/Cisco.pm'} );
 
 sub new {
@@ -167,6 +167,9 @@ sub _format {
 	my $INTERFACE = Object::KVC::Hash->new();
 	$INTERFACE->set( 'ENTRY', Object::KVC::String->new('INTERFACE') );
 
+	my $ROUTE = Object::KVC::Hash->new();
+	$ROUTE->set( 'ENTRY', Object::KVC::String->new('ROUTE') );
+
 	my $RULE  = Object::KVC::String->new('RULE');
 
 	my $ALL = Farly::Transport::PortRange->new('1 65535');
@@ -177,6 +180,19 @@ sub _format {
 	#interface ip addresses should not be prefixed with 'host'
 	if ( $ce->matches( $INTERFACE ) ) {
 		foreach my $key ( $ce->get_keys() ) {
+			$hash->{$key} = $ce->get($key)->as_string();
+		}
+		return $hash;
+	}
+
+	# for routes, neither interface names nor ip addresses should be prefixed
+	if ( $ce->matches( $ROUTE ) ) {
+		foreach my $key ( $ce->get_keys() ) {
+			if( $key eq 'INTERFACE'){
+				# use _value_format because $ce isa 'Object::KVC::HashRef'
+				$hash->{$key} = $self->_value_format($ce->get($key));
+				next;
+			}
 			$hash->{$key} = $ce->get($key)->as_string();
 		}
 		return $hash;

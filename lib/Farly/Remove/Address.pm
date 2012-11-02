@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 sub new {
 	my ( $class, $container ) = @_;
@@ -17,32 +17,35 @@ sub new {
 	  unless ( $container->isa("Object::KVC::List") );
 
 	my $self = {
-		FW      => $container,
-		REMOVE  => Object::KVC::Set->new(),
+		FW     => $container,
+		REMOVE => Object::KVC::Set->new(),
 	};
 	bless $self, $class;
 
 	return $self;
 }
 
-sub _fw { return $_[0]->{FW} }
+sub fw { return $_[0]->{FW} }
 
 # remove can be called many times
 # all objects in {REMOVE} need to be removed from {FW}
 sub remove {
-	my ( $self, $ip ) = @_;	
-	
+	my ( $self, $ip ) = @_;
+
 	confess "ip not defined" unless defined($ip);
-	
+
+	confess "Farly::IPv4::Address address required"
+	  unless defined( $ip->isa('Farly::IPv4::Address') );
 	#print "\nsearching for references to ", $ip->as_string, "...\n";
-	
+
 	my $garbage_list = $self->_address_search($ip);
-	
-	my $objects_for_cleanup = $self->_collect_garbage( $garbage_list );
+
+	my $objects_for_cleanup = $self->_collect_garbage($garbage_list);
 
 	if ( $objects_for_cleanup->size() != 0 ) {
+
 		#print "\nstoring removed objects in reverse order\n\n";
-		$self->_add_reversed_list( $objects_for_cleanup );
+		$self->_add_reversed_list($objects_for_cleanup);
 		$self->_cleanup();
 	}
 	else {
@@ -62,19 +65,20 @@ sub _cleanup {
 	my ($self) = @_;
 
 	my $new_list = Object::KVC::List->new();
-	
-	foreach my $object ( $self->_fw->iter() ) {
+
+	foreach my $object ( $self->fw->iter() ) {
+
 		#print $object->dump(),"\n";
-		if ( ! $object->has_defined('REMOVE') ) {
+		if ( !$object->has_defined('REMOVE') ) {
 			$new_list->add($object);
 		}
 	}
-	
+
 	$self->{FW} = $new_list;
 }
 
 sub _address_search {
-	my ($self, $ip) = @_;
+	my ( $self, $ip ) = @_;
 
 	my $fw = $self->{FW};
 
@@ -87,8 +91,8 @@ sub _address_search {
 
 	$search->set( "SRC_IP", $ip );
 	$fw->contained_by( $search, $search_result );
-	$search->delete_key("SRC_IP");	
-	
+	$search->delete_key("SRC_IP");
+
 	$search->set( "DST_IP", $ip );
 	$fw->contained_by( $search, $search_result );
 
@@ -100,17 +104,18 @@ sub _collect_garbage {
 
 	my $fw = $self->{CONFIG};
 
-	my $index = Object::KVC::Index->new( $self->_fw );
-	$index->make_index( "ENTRY", "ID" );
+	my $index = Object::KVC::Index->new( $self->fw );
+	$index->make_index( 'ENTRY', 'ID' );
 
-	my $GROUP = Object::KVC::String->new("GROUP");
-	my $RULE  = Object::KVC::String->new("RULE");
-	my $OBJECT = Object::KVC::String->new("OBJECT");
+	my $GROUP  = Object::KVC::String->new('GROUP');
+	my $RULE   = Object::KVC::String->new('RULE');
+	my $OBJECT = Object::KVC::String->new('OBJECT');
+	my $INTERFACE = Object::KVC::String->new('INTERFACE');
 
 	my @stack;
 	my $remove = Object::KVC::Set->new();
 
-	push @stack, $garbage_list->iter();	
+	push @stack, $garbage_list->iter();
 
 	while (@stack) {
 
@@ -119,21 +124,21 @@ sub _collect_garbage {
 		if ( $object->get('ENTRY')->equals($GROUP) ) {
 
 			#it's a group, check the size
-			my $actual = $index->fetch( 
+			my $actual = $index->fetch(
 				$object->get('ENTRY')->as_string(),
 				$object->get('ID')->as_string()
-				);
+			);
 
-			if ( ! defined $actual ) {
+			if ( !defined $actual ) {
 				confess "error ", $object->dump(), " actual not found";
 			}
 
 			# if the size of the group is 1 all references to the
 			# group must be removed first
 			if ( $actual->size == 1 ) {
-				
+
 				# convert the $object to a reference object
-				my $ref = $self->_create_reference( $object );
+				my $ref = $self->_create_reference($object);
 
 				# if the group can be removed no members of that group
 				# should be in $remove, i.e. the group has already been
@@ -141,53 +146,57 @@ sub _collect_garbage {
 				$remove = $self->_remove_copy( $remove, $ref );
 
 				$object->set( 'REMOVE', Object::KVC::String->new('GROUP') );
-				$remove->add( $object );
+				$remove->add($object);
 
-				# each referring object must be checked to see if it can be removed
-				# all references to 'object' will be in @remove after 'object'
+			 # each referring object must be checked to see if it can be removed
+			 # all references to 'object' will be in @remove after 'object'
 
-				my @result = $self->_reference_search( $ref );
+				my @result = $self->_reference_search($ref);
 				push @stack, @result;
 			}
 			else {
+
 				# group size > 1
 
-				# create a new ::Set, minus the group member $object to be removed 
+			  # create a new ::Set, minus the group member $object to be removed
 				my $new_set = $self->_remove_copy( $actual, $object );
-				
+
 				# update the index to reflect that $object is removed
 				# because more objects could be removed from the group later on
 				$self->_update_index( $index, $new_set );
 
 				$object->set( 'REMOVE', Object::KVC::String->new('OBJECT') );
-				$remove->add( $object );
+				$remove->add($object);
 			}
 
 		}
 		elsif ( $object->get('ENTRY')->equals($OBJECT) ) {
-			
+
 			# set the object to be removed
 			$object->set( 'REMOVE', Object::KVC::String->new('OBJECT') );
-			$remove->add( $object );
+			$remove->add($object);
 
 			# reformat the object into a reference object
-			my $ref = $self->_create_reference( $object );
+			my $ref = $self->_create_reference($object);
 
 			# find everything that references the removed object
-			my @result = $self->_reference_search( $ref );
+			my @result = $self->_reference_search($ref);
 			push @stack, @result;
-			
+
 		}
 		elsif ( $object->get('ENTRY')->equals($RULE) ) {
 
 			# rules which refer to the Address directly can be removed
 			# immediately
 			$object->set( 'REMOVE', Object::KVC::String->new('RULE') );
-			$remove->add( $object );
+			$remove->add($object);
 
 		}
+		elsif ( $object->get('ENTRY')->equals($INTERFACE) ) {
+			next;
+		}
 		else {
-			confess "\nI don't know what this is ", $object->dump();
+			confess "\nI don't know what this is:\n", $object->dump();
 		}
 	}
 
@@ -197,11 +206,11 @@ sub _collect_garbage {
 # convert an object into a reference object
 sub _create_reference {
 	my ( $self, $object ) = @_;
-	
+
 	my $ref = Object::KVC::HashRef->new();
 	$ref->set( 'ENTRY', $object->{'ENTRY'} );
 	$ref->set( 'ID',    $object->{'ID'} );
-	
+
 	return $ref;
 }
 
@@ -211,7 +220,7 @@ sub _reference_search {
 
 	my @search_result;
 
-	foreach my $object ( $self->_fw->iter ) {
+	foreach my $object ( $self->fw->iter ) {
 		foreach my $property ( $object->get_keys ) {
 			if ( $object->get($property)->equals($search) ) {
 				push @search_result, $object;
@@ -230,7 +239,7 @@ sub _remove_copy {
 	my $r = Object::KVC::Set->new();
 
 	foreach my $object ( $set->iter ) {
-		if ( ! $object->matches($remove) ) {
+		if ( !$object->matches($remove) ) {
 			$r->add($object);
 		}
 	}
@@ -242,14 +251,14 @@ sub _update_index {
 	my ( $self, $index, $set ) = @_;
 
 	my $entry = $set->[0]->get('ENTRY')->as_string();
-	my $id = $set->[0]->get('ID')->as_string();
+	my $id    = $set->[0]->get('ID')->as_string();
 
 	my $hash = $index->get_index();
-				
-	die "$entry $id not found in index" unless
-	  defined ( $hash->{ $entry }->{ $id} );
-	
-	$hash->{ $entry }->{ $id} = $set;
+
+	die "$entry $id not found in index"
+	  unless defined( $hash->{$entry}->{$id} );
+
+	$hash->{$entry}->{$id} = $set;
 }
 
 # reverse the order of the remove list

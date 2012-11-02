@@ -6,7 +6,7 @@ use warnings;
 use Carp;
 use Log::Log4perl qw(get_logger);
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 sub new {
 	my ( $class ) = @_;
@@ -90,6 +90,10 @@ sub run {
 			next;
 		}
 		if ( $line =~ /^access-group/ ) {
+			$self->append($line);
+			next;
+		}
+		if ( $line =~ /^route/ ) {
 			$self->append($line);
 		}
 	}

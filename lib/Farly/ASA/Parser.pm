@@ -7,7 +7,7 @@ use Carp;
 use Log::Log4perl qw(get_logger);
 use Parse::RecDescent;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 $::RD_ERRORS = 1; # Make sure the parser dies when it encounters an error
 #$::RD_WARN   = 1; # Enable warnings. This will warn on unused rules &c.
@@ -24,7 +24,7 @@ sub new {
 	$logger->info("$self NEW");
 	
 	$self->_init();
-	
+
 	return $self;
 }
 
@@ -65,6 +65,7 @@ startrule :
 	|   object EOL
 	|	access_group EOL
 	|	hostname EOL
+	|	route EOL
 	|	<error>
 
 hostname :
@@ -359,6 +360,39 @@ ag_interface :
 		'interface' IF_REF
 
 #
+# routes
+#
+
+route :
+		'route' route_interface
+
+route_interface :
+		IF_REF route_dst
+
+route_dst :
+		IPNETWORK route_nexthop
+	|	DEFAULT_ROUTE route_nexthop
+
+route_nexthop :
+		IPADDRESS route_cost
+
+route_cost :
+		DIGIT route_options
+
+route_options :
+		route_track
+	|	route_tunneled
+	|	EOL
+	|	<error>
+
+route_track :
+		'track' DIGIT route_tunneled
+	|	'track' DIGIT
+
+route_tunneled :
+		TUNNELED
+
+#
 # IP address types
 #
 # "object" should be fine here because "object" can not  
@@ -433,8 +467,11 @@ OBJECT_TYPE :
 			'network'
 		|	'service'
 
-ANY:
+ANY :
 		'any'
+
+DEFAULT_ROUTE :
+			/0(\s+)0/
 
 IPADDRESS :
 		/((\d{1,3})((\.)(\d{1,3})){3})/
@@ -501,6 +538,9 @@ ACL_STATUS :
 STATE :		
     	'enable'
 	|	'disable'
+
+TUNNELED :
+		'tunneled'
 
 LOG_LEVEL :
 		/\d+/ | 'emergencies' | 'alerts' | 'critical' | 'errors' 

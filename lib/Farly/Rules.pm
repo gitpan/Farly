@@ -7,7 +7,7 @@ use Carp;
 use Data::Dumper;
 use Log::Log4perl qw(get_logger);
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 sub new {
 	my ( $class, $fw ) = @_;

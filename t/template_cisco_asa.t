@@ -209,6 +209,30 @@ $ce14->set( "STATUS",       Object::KVC::String->new("inactive") );
 
 $container->add($ce14);
 
+my $if_ref_inside = Object::KVC::HashRef->new();
+$if_ref_inside->set( "ENTRY", Object::KVC::String->new("INTERFACE") );
+$if_ref_inside->set( "ID",    Object::KVC::String->new("inside") );
+
+my $ce15 = Object::KVC::Hash->new();
+$ce15->set( "ENTRY",        Object::KVC::String->new("ROUTE") );
+$ce15->set( "INTERFACE",    $if_ref_inside );
+$ce15->set( "DESTINATION",  Farly::IPv4::Network->new('192.168.0.1 255.255.255.0'));
+$ce15->set( "NEXTHOP",      Farly::IPv4::Address->new('192.168.1.1'));
+$ce15->set( "COST",         Object::KVC::Integer->new("1") );
+$ce15->set( "TRACK",        Object::KVC::Integer->new("20") );
+
+$container->add($ce15);
+
+my $ce16 = Object::KVC::Hash->new();
+$ce16->set( "ENTRY",        Object::KVC::String->new("ROUTE") );
+$ce16->set( "INTERFACE",    $if_ref_inside );
+$ce16->set( "DESTINATION",  Farly::IPv4::Network->new('0.0.0.0 0.0.0.0'));
+$ce16->set( "NEXTHOP",      Farly::IPv4::Address->new('192.168.0.1'));
+$ce16->set( "COST",         Object::KVC::Integer->new("2") );
+$ce15->set( "TUNNELED",     Object::KVC::String->new("tunneled") );
+
+$container->add($ce16);
+
 my $string = '';
 my $template = Farly::Template::Cisco->new( 'ASA', 'OUTPUT' => \$string );
 
@@ -240,6 +264,8 @@ no access-list outside-in permit 6 any object-group high-ports host 192.168.1.1 
 no object-group service ms-rpc-locator tcp
 access-list outside-in line 1 permit 6 any gt 1024 host 192.168.1.1 eq 443 log interval 600 inactive
 access-list outside-in line 1 permit 6 any gt 1024 host 192.168.1.1 lt 443 log interval 600 inactive
+route inside 192.168.0.0 255.255.255.0 192.168.1.1 1 track 20 tunneled
+route inside 0.0.0.0 0.0.0.0 192.168.0.1 2
 };
 
 ok( $string eq $expected, "template - no formatting" );
@@ -284,7 +310,8 @@ no access-list outside-in permit tcp any object-group high-ports host 192.168.1.
 no object-group service ms-rpc-locator tcp
 access-list outside-in line 1 permit tcp any gt 1024 host 192.168.1.1 eq https log interval 600 inactive
 access-list outside-in line 1 permit tcp any gt 1024 host 192.168.1.1 lt https log interval 600 inactive
+route inside 192.168.0.0 255.255.255.0 192.168.1.1 1 track 20 tunneled
+route inside 0.0.0.0 0.0.0.0 192.168.0.1 2
 };
 
 ok( $string eq $expected, "template - formatted" );
-

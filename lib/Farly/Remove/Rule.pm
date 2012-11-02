@@ -6,7 +6,7 @@ use warnings;
 use Carp;
 use Farly::Rules;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 # one object per firewall
 sub new {
@@ -19,8 +19,8 @@ sub new {
 	  unless ( $container->isa("Object::KVC::List") );
 
 	my $self = {
-		FW      => $container,
-		RESULT  => Object::KVC::List->new(),
+		CONFIG => $container,
+		RESULT => Object::KVC::List->new(),
 	};
 	bless $self, $class;
 
@@ -32,54 +32,56 @@ sub new {
 # if the config has a group, then remove the rule with the group
 # and keep the expanded rules in the configuration
 
-sub _fw { return $_[0]->{FW} }
+sub config { return $_[0]->{CONFIG} }
 sub result { return $_[0]->{RESULT} }
 
 sub _fetch_config_acl {
 	my ( $self, $id ) = @_;
-	
+
 	my $search = Object::KVC::Hash->new();
-	$search->set( 'ENTRY', Object::KVC::String->new('RULE') );	
-	$search->set('ID',$id);
-	
+	$search->set( 'ENTRY', Object::KVC::String->new('RULE') );
+	$search->set( 'ID',    $id );
+
 	my $search_result = Object::KVC::List->new();
-	
-	$self->_fw->matches($search,$search_result);
-	
-	return $search_result
+
+	$self->config->matches( $search, $search_result );
+
+	return $search_result;
 }
 
 sub _has_group {
 	my ( $self, $rule_object ) = @_;
-	
+
 	my $GROUP = Object::KVC::HashRef->new();
-	$GROUP->set( 'ENTRY', Object::KVC::String->new('GROUP') );	
-	
+	$GROUP->set( 'ENTRY', Object::KVC::String->new('GROUP') );
+
 	foreach my $property ( $rule_object->get_keys() ) {
 		if ( $rule_object->get($property)->isa('Object::KVC::HashRef') ) {
 			if ( $rule_object->get($property)->matches($GROUP) ) {
 				return 1;
-			}			
+			}
 		}
 	}
 }
 
 sub _is_unique {
 	my ( $self, $rule_set, $id ) = @_;
-	
+
 	foreach my $object ( $rule_set->iter() ) {
-		if ( ! $object->get('ID')->equals($id) ) {
-			confess "more than one rule $id ",$object->get('ID')->as_string(),"\n";
+		if ( !$object->get('ID')->equals($id) ) {
+			confess "more than one rule $id ", $object->get('ID')->as_string(),
+			  "\n";
 		}
 	}
 }
 
 sub _is_expanded {
 	my ( $self, $rule_set ) = @_;
-	
+
 	foreach my $object ( $rule_set->iter() ) {
-		if ( $self->_has_group( $object ) ) {
-			confess "ruleset not expanded ",$object->get('ID')->as_string(),"\n";
+		if ( $self->_has_group($object) ) {
+			confess "ruleset not expanded ", $object->get('ID')->as_string(),
+			  "\n";
 		}
 	}
 }
@@ -96,15 +98,15 @@ sub remove {
 
 	#$remove_list must contain one expanded rule set only
 	my $id = $remove_list->[0]->get('ID');
-	$self->_is_unique($remove_list, $id);
-	
-	#$remove_list must be expanded rules, it must not contain groups	
+	$self->_is_unique( $remove_list, $id );
+
+	#$remove_list must be expanded rules, it must not contain groups
 	$self->_is_expanded($remove_list);
 
 	# get the configuration rule set
 	my $config_list = $self->_fetch_config_acl($id);
-	
-	# create indexes by LINE
+
+	# create indexes by LINE,  'LINE NO.' => ::Set
 	my $config_index = Object::KVC::Index->new($config_list);
 	$config_index->make_index("LINE");
 
@@ -114,10 +116,10 @@ sub remove {
 	# get an array of the rule line numbers that have errors
 	my @remove_rules = sort { $a <=> $b } keys %{ $removed_index->get_index };
 
-	# create an rule expander
-	my $rule_expander = Farly::Rules->new( $self->_fw );
+	# create a rule expander object
+	my $rule_expander = Farly::Rules->new( $self->config );
 
-	# check each config rule to see if it uses a group or not  
+	# check each config rule to see if it uses a group or not
 	foreach my $line_number (@remove_rules) {
 
 		# get the config rule
@@ -129,46 +131,37 @@ sub remove {
 
 		#get the rule entries that need to be removed from the config
 		my $remove_set = $removed_index->fetch($line_number);
-	
-		#does the config rule have an object-group?
-		if ( $self->_has_group( $config_rule ) ) {
-			
+
+		#if the config rule has an object-group then replace the config
+		#rule with all expanded rule entries that need to be kept
+		if ( $self->_has_group($config_rule) ) {
+
 			# clone and expand the config rule, putting the rule
 			# entries into a ::Set
 			my $clone = $config_rule->clone();
-			
+
 			my $exp_config_rule_set = Object::KVC::Set->new();
 			$rule_expander->expand( $clone, $exp_config_rule_set );
-			
- 			# ::Set difference is all rule entries in the config that
- 			#  are not in remove, i.e. that need to be kept
- 			my $diff = $exp_config_rule_set->difference($remove_set);
 
-			# the config rule is being removed
-			$config_rule->set( 'REMOVE', Object::KVC::String->new('RULE') );
-			
+			# ::Set difference is all rule entries in the config that
+			#  are not in remove, i.e. that need to be kept
+			my $diff = $exp_config_rule_set->difference($remove_set);
+
 			# the rule entries to be kept are added to the config in raw form
 			# diff is empty if the entire config rule needs to be removed
 			foreach my $keep_object ( $diff->iter() ) {
 				$self->result->add($keep_object);
 			}
-			
-			# after the kept entries are added the remove the old config rule
-			$config_rule->delete_key('LINE');
-			$self->result->add($config_rule);
-		}
-		else {
 
-			$config_rule->delete_key('LINE');
-			
-			#the config rule had no group, so remove it
-			$config_rule->set( 'REMOVE', Object::KVC::String->new('RULE') );
-			
-			$self->result->add($config_rule);			
 		}
-					   
+
+		#the running config rule had an error, so remove it
+		#use the expanded rule entries instead
+		my $r = $config_rule->clone();
+		$r->set( 'REMOVE', Object::KVC::String->new('RULE') );
+		$r->delete_key('LINE');
+		$self->result->add($r);
 	}
-		
 }
 
 1;
@@ -202,8 +195,6 @@ current Farly firewall model.
 
   $remover->remove( $list );
 
-The remove method should only be called once.
-
 =head2 result()
 
 Returns an Object::KVC::Set<Object::KVC::Hash> object containing all objects
@@ -211,6 +202,15 @@ which need to be removed or added to the current Farly firewall model in order
 to remove all references to the list of removed firewall rule entries.
 
   $remove_result_set = $remover->result();
+
+=head2 config()
+
+Return the current configuration Object::KVC::List<Object::KVC::Hash> object.
+
+  $fw_config = $remover->config();
+  
+After calling remove() this will be the up to date configuration, with configuration
+rules removed and expanded rule entries added in.
 
 =head1 COPYRIGHT AND LICENCE
 

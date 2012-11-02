@@ -19,7 +19,7 @@ use Farly::Transport::PortLT;
 use Farly::Transport::PortRange;
 use Farly::Transport::Protocol;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 our ($volume,$dir,$file) = File::Spec->splitpath( $INC{'Farly.pm'} );
 Log::Log4perl::init( $volume.$dir.'Farly/Log/Farly.conf');
@@ -129,6 +129,18 @@ Returns Object::KVC::List<Object::KVC::Hash> firewall device model.
  
 Valid firewall types:
  ASA  - Cisco ASA firewall
+
+=AUTHOR
+
+Trystan Johnson
+
+=CONTRIBUTORS
+
+=over
+
+=item *  Lukas Thiemeier <lukast@cpan.org>
+
+=back
 
 =head1 COPYRIGHT AND LICENCE
 

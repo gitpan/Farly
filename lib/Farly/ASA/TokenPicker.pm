@@ -7,36 +7,37 @@ use Carp;
 use Scalar::Util qw(blessed);
 use Log::Log4perl qw(get_logger);
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our $AUTOLOAD;
 
 # when this method is called, create a new object
 # with "ENTRY"  model meta data set to this
 # "ENTRY" is roughly equivalent to a namespace
 our $Create_Object_Methods = {
-	"hostname"     => "HOSTNAME",
-	"names"        => "NAME",
-	"interface"    => "INTERFACE",
-	"object"       => "OBJECT",
-	"object_group" => "GROUP",
-	"access_list"  => "RULE",
-	"access_group" => "ACCESS_GROUP",
+	'hostname'     => 'HOSTNAME',
+	'names'        => 'NAME',
+	'interface'    => 'INTERFACE',
+	'object'       => 'OBJECT',
+	'object_group' => 'GROUP',
+	'access_list'  => 'RULE',
+	'access_group' => 'ACCESS_GROUP',
+	'route'        => 'ROUTE',
 };
 
 # when one of these methods are called set the
 # OBJECT_TYPE meta data value to this
 our $Object_Type_Map = {
-	"object_service"     => "SERVICE",
-	"object_host"        => "HOST",
-	"object_range"       => "RANGE",
-	"object_network"     => "NETWORK",
-	"og_network_object"  => "NETWORK",
-	"og_port_object"     => "PORT",
-	"og_group_object"    => "GROUP",
-	"og_protocol_object" => "PROTOCOL",
-	"og_description"     => "COMMENT",
-	"og_icmp_object"     => "ICMP_TYPE",
-	"og_service_object"  => "SERVICE",
+	'object_service'     => 'SERVICE',
+	'object_host'        => 'HOST',
+	'object_range'       => 'RANGE',
+	'object_network'     => 'NETWORK',
+	'og_network_object'  => 'NETWORK',
+	'og_port_object'     => 'PORT',
+	'og_group_object'    => 'GROUP',
+	'og_protocol_object' => 'PROTOCOL',
+	'og_description'     => 'COMMENT',
+	'og_icmp_object'     => 'ICMP_TYPE',
+	'og_service_object'  => 'SERVICE',
 };
 
 # The $Rule_To_Key_Map hash key is the type of the parse tree node. 
@@ -45,46 +46,52 @@ our $Object_Type_Map = {
 # The key for the Object::KVC::Hash which references the '__VALUE__' 
 # defines the vendor to Farly model mapping.
 our $Rule_To_Key_Map = {
-	"hostname"                => "ID",
-	"interface"               => "NAME",
-	"if_name"                 => "ID",
-	"sec_level"               => "SECURITY_LEVEL",
-	"if_ip"                   => "OBJECT",
-	"if_mask"                 => "MASK",
-	"if_standby"              => "STANDBY_IP",
-	"object"                  => "OBJECT_TYPE",      #this will be over written
-	"object_id"               => "ID",
-	"object_address"          => "OBJECT",
-	"object_service_protocol" => "PROTOCOL",
-	"object_service_src"      => "SRC_PORT",
-	"object_service_dst"      => "DST_PORT",
-	"object_icmp"             => "ICMP_TYPE",
-	"object_group"            => "GROUP_TYPE",
-	"og_id"                   => "ID",
-	"og_protocol"             => "GROUP_PROTOCOL",
-	"og_object"               => "OBJECT",
-	"og_so_protocol"          => "PROTOCOL",
-	"og_so_src_port"          => "SRC_PORT",
-	"og_so_dst_port"          => "DST_PORT",
-	"acl_action"              => "ACTION",
-	"acl_id"                  => "ID",
-	"acl_line"                => "LINE",
-	"acl_type"                => "TYPE",
-	"acl_protocol"            => "PROTOCOL",
-	"acl_src_ip"              => "SRC_IP",
-	"acl_src_port"            => "SRC_PORT",
-	"acl_dst_ip"              => "DST_IP",
-	"acl_dst_port"            => "DST_PORT",
-	"acl_icmp_type"           => "ICMP_TYPE",
-	"acl_remark"              => "COMMENT",
-	"acl_logging"		      => "LOG_LEVEL", #when its the default
-	"acl_log_level"           => "LOG_LEVEL",
-	"acl_log_interval"	      => "LOG_INTERVAL",
-	"acl_time_range"          => "TIME_RANGE",
-	"acl_inactive"            => "STATUS",
-	"ag_id"                   => "ID",
-	"ag_direction"            => "DIRECTION",
-	"ag_interface"            => "INTERFACE",
+	'hostname'                => 'ID',
+	'interface'               => 'NAME',
+	'if_name'                 => 'ID',
+	'sec_level'               => 'SECURITY_LEVEL',
+	'if_ip'                   => 'OBJECT',
+	'if_mask'                 => 'MASK',
+	'if_standby'              => 'STANDBY_IP',
+	'object'                  => 'OBJECT_TYPE',      #this will be over written
+	'object_id'               => 'ID',
+	'object_address'          => 'OBJECT',
+	'object_service_protocol' => 'PROTOCOL',
+	'object_service_src'      => 'SRC_PORT',
+	'object_service_dst'      => 'DST_PORT',
+	'object_icmp'             => 'ICMP_TYPE',
+	'object_group'            => 'GROUP_TYPE',
+	'og_id'                   => 'ID',
+	'og_protocol'             => 'GROUP_PROTOCOL',
+	'og_object'               => 'OBJECT',
+	'og_so_protocol'          => 'PROTOCOL',
+	'og_so_src_port'          => 'SRC_PORT',
+	'og_so_dst_port'          => 'DST_PORT',
+	'acl_action'              => 'ACTION',
+	'acl_id'                  => 'ID',
+	'acl_line'                => 'LINE',
+	'acl_type'                => 'TYPE',
+	'acl_protocol'            => 'PROTOCOL',
+	'acl_src_ip'              => 'SRC_IP',
+	'acl_src_port'            => 'SRC_PORT',
+	'acl_dst_ip'              => 'DST_IP',
+	'acl_dst_port'            => 'DST_PORT',
+	'acl_icmp_type'           => 'ICMP_TYPE',
+	'acl_remark'              => 'COMMENT',
+	'acl_logging'		      => 'LOG_LEVEL', #when its the default
+	'acl_log_level'           => 'LOG_LEVEL',
+	'acl_log_interval'	      => 'LOG_INTERVAL',
+	'acl_time_range'          => 'TIME_RANGE',
+	'acl_inactive'            => 'STATUS',
+	'ag_id'                   => 'ID',
+	'ag_direction'            => 'DIRECTION',
+	'ag_interface'            => 'INTERFACE',
+	'route_interface'         => 'INTERFACE',
+	'route_dst'               => 'DESTINATION',
+	'route_nexthop'           => 'NEXTHOP',
+	'route_cost'              => 'COST',
+	'route_track'             => 'TRACK',
+	'route_tunneled'          => 'TUNNELED'
 };
 
 sub new {

@@ -48,6 +48,10 @@
 	[% PROCESS access_group %]
 [% END %]
 
+[% IF ENTRY == "ROUTE" %]
+	[% PROCESS route %]
+[% END %]
+
 [% END %]
 [% END %]
 
@@ -181,7 +185,6 @@
 
 [% END %]
 
-
 [% BLOCK rule %]
 
 	[% FILTER collapse %]
@@ -239,4 +242,18 @@
 
 [% BLOCK access_group %]
 	access-group [% ID %] [% DIRECTION %] [% INTERFACE %]
+[% END %]
+
+[% BLOCK route %]
+	[% FILTER collapse %]
+		route [% INTERFACE %] [% DESTINATION %] [% NEXTHOP %] [% COST %]
+	
+		[% IF TRACK.defined %]
+			track [% TRACK %]
+		[% END %]
+
+		[% IF TUNNELED.defined %]
+			[% TUNNELED %]
+		[% END %]
+	[% END %]
 [% END %]

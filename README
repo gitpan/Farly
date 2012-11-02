@@ -63,8 +63,8 @@ Cisco ASA 7.2 and up.
 
 LIMITATIONS
 
-- The Farly model is a subset of the firewall configuration
-relevant to interfaces, objects, groups, and rules.
+- The Farly model is a subset of the firewall configuration relevant
+  to interfaces, objects, groups, rules, and static routes.
 - Interface IP addresses set with 'dhcp' are not supported.
 - NAT configurations are not modeled.
 - No IPv6 support
