@@ -1,7 +1,5 @@
 use strict;
 use warnings;
-
-use Data::Dumper;
 use Scalar::Util 'blessed';
 use Test::Simple tests => 29;
 use Log::Log4perl qw(:easy);
@@ -23,10 +21,14 @@ my $expected;
 
 $string = q{hostname test_fw};
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
 
-$expected = { 'hostname' => 'test_fw' };
+$actual = productions($tree);
+
+$expected = {
+	'hostname' => 1,
+	'STRING'   => 1
+};
 
 ok( equals( $expected, $actual ), "hostname" );
 
@@ -35,13 +37,18 @@ ok( equals( $expected, $actual ), "hostname" );
 #
 
 $string = q{name 192.168.10.0 net1 description This is a test};
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'ip'          => '192.168.10.0',
-	'name'        => 'net1',
-	'description' => 'This is a test'
+	'REMARKS'      => 1,
+	'named_ip'     => 1,
+	'NAME_ID'      => 1,
+	'name'         => 1,
+	'name_comment' => 1,
+	'IPADDRESS'    => 1
 };
 
 ok( equals( $expected, $actual ), "name" );
@@ -57,11 +64,13 @@ interface Vlan2
 
 $tree = $parser->parse($string);
 
-$actual = visit($tree);
+$actual = productions($tree);
 
 $expected = {
-	'if_name'   => 'outside',
-	'interface' => 'Vlan2'
+	'if_name'           => 1,
+	'interface_options' => 2,
+	'interface'         => 1,
+	'STRING'            => 2
 };
 
 ok( equals( $expected, $actual ), "interface nameif" );
@@ -74,15 +83,21 @@ $string = q{
 interface Vlan2
  ip address 10.2.19.8 255.255.255.248 standby 10.2.19.9
 };
+
 $tree = $parser->parse($string);
 
-$actual = visit($tree);
+$actual = productions($tree);
 
 $expected = {
-	'if_ip'      => '10.2.19.8',
-	'if_mask'    => '255.255.255.248',
-	'interface'  => 'Vlan2',
-	'if_standby' => '10.2.19.9'
+	'if_ip'             => 1,
+	'if_mask'           => 1,
+	'interface_options' => 2,
+	'if_addr'           => 1,
+	'interface'         => 1,
+	'if_standby'        => 1,
+	'MASK'              => 1,
+	'IPADDRESS'         => 2,
+	'STRING'            => 1
 };
 
 ok( equals( $expected, $actual ), "interface ip" );
@@ -96,12 +111,16 @@ interface Vlan2
  security-level 0
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'sec_level' => '0',
-	'interface' => 'Vlan2'
+	'DIGIT'             => 1,
+	'sec_level'         => 1,
+	'interface_options' => 2,
+	'interface'         => 1,
+	'STRING'            => 1
 };
 
 ok( equals( $expected, $actual ), "interface security-level" );
@@ -115,13 +134,19 @@ object network TestFW
  host 192.168.5.219
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'object_host' => '192.168.5.219',
-	'object'      => 'network',
-	'object_id'   => 'TestFW'
+	'object'         => 1,
+	'object_address' => 1,
+	'object_host'    => 2,
+	'STRING'         => 1,
+	'MEMBER_TYPE'    => 1,
+	'object_id'      => 1,
+	'OBJECT_TYPE'    => 1,
+	'IPADDRESS'      => 1
 };
 
 ok( equals( $expected, $actual ), "object host" );
@@ -135,13 +160,19 @@ object network test_net1
  subnet 10.1.2.0 255.255.255.0
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'object_network' => '10.1.2.0 255.255.255.0',
-	'object'         => 'network',
-	'object_id'      => 'test_net1'
+	'object_network' => 2,
+	'object'         => 1,
+	'IPNETWORK'      => 1,
+	'object_address' => 1,
+	'STRING'         => 1,
+	'MEMBER_TYPE'    => 1,
+	'object_id'      => 1,
+	'OBJECT_TYPE'    => 1
 };
 
 ok( equals( $expected, $actual ), "object subnet" );
@@ -155,13 +186,19 @@ object network test_net1_range
  range 10.1.2.13 10.1.2.28
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'object_range' => '10.1.2.13 10.1.2.28',
-	'object'       => 'network',
-	'object_id'    => 'test_net1_range'
+	'IPRANGE'        => 1,
+	'object'         => 1,
+	'MEMBER_TYPE'    => 1,
+	'object_address' => 1,
+	'object_id'      => 1,
+	'OBJECT_TYPE'    => 1,
+	'object_range'   => 2,
+	'STRING'         => 1
 };
 
 ok( equals( $expected, $actual ), "object range" );
@@ -175,15 +212,26 @@ object service web_https
  service tcp source gt 1024 destination eq 443
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'object_service_protocol' => 'tcp',
-	'object'                  => 'service',
-	'object_service_dst'      => '443',
-	'object_id'               => 'web_https',
-	'object_service_src'      => '1024'
+	'port_eq'                 => 1,
+	'object_service_protocol' => 1,
+	'object'                  => 1,
+	'port_gt'                 => 1,
+	'object_service'          => 2,
+	'PROTOCOL'                => 1,
+	'PORT_ID'                 => 1,
+	'port'                    => 2,
+	'object_service_src'      => 1,
+	'PORT_GT'                 => 1,
+	'STRING'                  => 1,
+	'MEMBER_TYPE'             => 1,
+	'object_service_dst'      => 1,
+	'object_id'               => 1,
+	'OBJECT_TYPE'             => 1
 };
 
 ok( equals( $expected, $actual ), "object service src dst" );
@@ -195,15 +243,25 @@ ok( equals( $expected, $actual ), "object service src dst" );
 $string = q{object-group service NFS
  service-object 6 source eq 2046
 };
+
 $tree = $parser->parse($string);
 
-$actual = visit($tree);
+$actual = productions($tree);
 
 $expected = {
-	'og_so_src_port' => '2046',
-	'og_id'          => 'NFS',
-	'og_so_protocol' => '6',
-	'object_group'   => 'service'
+	'port_eq'           => 1,
+	'og_service_object' => 2,
+	'PROTOCOL'          => 1,
+	'og_so_protocol'    => 1,
+	'PORT_ID'           => 1,
+	'object_group'      => 1,
+	'port'              => 1,
+	'STRING'            => 1,
+	'og_id'             => 1,
+	'og_so_src_port'    => 1,
+	'MEMBER_TYPE'       => 1,
+	'og_object'         => 1,
+	'GROUP_TYPE'        => 1
 };
 
 ok( equals( $expected, $actual ), "object-group service src" );
@@ -217,13 +275,19 @@ object-group protocol test65
  protocol-object tcp
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'og_id'        => 'test65',
-	'og_object'    => 'tcp',
-	'object_group' => 'protocol'
+	'og_id'              => 1,
+	'MEMBER_TYPE'        => 1,
+	'PROTOCOL'           => 1,
+	'og_protocol_object' => 2,
+	'og_object'          => 1,
+	'object_group'       => 1,
+	'GROUP_TYPE'         => 1,
+	'STRING'             => 1
 };
 
 ok( equals( $expected, $actual ), "object-group protocol" );
@@ -236,13 +300,20 @@ object-group network test_net
  network-object host server1
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'og_id'        => 'test_net',
-	'og_object'    => 'server1',
-	'object_group' => 'network'
+	'NAME'              => 1,
+	'object_group'      => 1,
+	'STRING'            => 1,
+	'og_id'             => 1,
+	'og_network_object' => 2,
+	'MEMBER_TYPE'       => 1,
+	'og_object'         => 1,
+	'address'           => 1,
+	'GROUP_TYPE'        => 1
 };
 
 ok( equals( $expected, $actual ), "network-object named host" );
@@ -256,14 +327,23 @@ object-group service web tcp
  port-object eq www
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'og_protocol'  => 'tcp',
-	'og_id'        => 'web',
-	'og_object'    => 'www',
-	'object_group' => 'service'
+	'port_eq'        => 1,
+	'PORT_ID'        => 1,
+	'GROUP_PROTOCOL' => 1,
+	'object_group'   => 1,
+	'port'           => 1,
+	'og_port_object' => 2,
+	'STRING'         => 1,
+	'og_protocol'    => 1,
+	'og_id'          => 1,
+	'MEMBER_TYPE'    => 1,
+	'og_object'      => 1,
+	'GROUP_TYPE'     => 1
 };
 
 ok( equals( $expected, $actual ), "port-object" );
@@ -277,13 +357,19 @@ object-group network test_net
  group-object server1
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'og_id'        => 'test_net',
-	'og_object'    => 'server1',
-	'object_group' => 'network'
+	'object_group'    => 1,
+	'GROUP_REF'       => 1,
+	'STRING'          => 1,
+	'og_id'           => 1,
+	'MEMBER_TYPE'     => 1,
+	'og_group_object' => 2,
+	'og_object'       => 1,
+	'GROUP_TYPE'      => 1
 };
 
 ok( equals( $expected, $actual ), "network group-object" );
@@ -297,13 +383,19 @@ object-group network test_net
  description test network
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'og_id'        => 'test_net',
-	'og_object'    => 'test network',
-	'object_group' => 'network'
+	'REMARKS'        => 1,
+	'og_id'          => 1,
+	'MEMBER_TYPE'    => 1,
+	'og_object'      => 1,
+	'object_group'   => 1,
+	'og_description' => 2,
+	'GROUP_TYPE'     => 1,
+	'STRING'         => 1
 };
 
 ok( equals( $expected, $actual ), "object-group description" );
@@ -316,14 +408,24 @@ $string = q{object-group service NFS
  service-object 6 destination eq 2046
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'og_id'          => 'NFS',
-	'og_so_protocol' => '6',
-	'object_group'   => 'service',
-	'og_so_dst_port' => '2046'
+	'port_eq'           => 1,
+	'og_service_object' => 2,
+	'PROTOCOL'          => 1,
+	'og_so_protocol'    => 1,
+	'PORT_ID'           => 1,
+	'object_group'      => 1,
+	'port'              => 1,
+	'og_so_dst_port'    => 1,
+	'STRING'            => 1,
+	'og_id'             => 1,
+	'MEMBER_TYPE'       => 1,
+	'og_object'         => 1,
+	'GROUP_TYPE'        => 1
 };
 
 ok( equals( $expected, $actual ), "object-group service dst" );
@@ -337,14 +439,21 @@ object-group service www tcp
  group-object web
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'og_protocol'  => 'tcp',
-	'og_id'        => 'www',
-	'og_object'    => 'web',
-	'object_group' => 'service'
+	'GROUP_PROTOCOL'  => 1,
+	'object_group'    => 1,
+	'GROUP_REF'       => 1,
+	'STRING'          => 1,
+	'og_protocol'     => 1,
+	'og_id'           => 1,
+	'MEMBER_TYPE'     => 1,
+	'og_group_object' => 2,
+	'og_object'       => 1,
+	'GROUP_TYPE'      => 1
 };
 
 ok( equals( $expected, $actual ), "object-group service" );
@@ -356,17 +465,31 @@ ok( equals( $expected, $actual ), "object-group service" );
 $string =
 q{access-list acl-outside permit tcp OG_NETWORK customerX range 1024 65535 host server1 eq 80};
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'acl_action'   => 'permit',
-	'acl_id'       => 'acl-outside',
-	'acl_dst_port' => '80',
-	'acl_src_port' => '1024 65535',
-	'acl_dst_ip'   => 'server1',
-	'acl_protocol' => 'tcp',
-	'acl_src_ip'   => 'customerX'
+	'port_eq'      => 1,
+	'PORT_RANGE'   => 1,
+	'ACTIONS'      => 1,
+	'PROTOCOL'     => 1,
+	'acl_options'  => 1,
+	'GROUP_REF'    => 1,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'acl_src_port' => 1,
+	'acl_protocol' => 1,
+	'address'      => 2,
+	'port_range'   => 1,
+	'NAME'         => 1,
+	'acl_dst_ip'   => 1,
+	'PORT_ID'      => 1,
+	'port'         => 2,
+	'acl_dst_port' => 1,
+	'access_list'  => 1,
+	'acl_src_ip'   => 1
 };
 
 ok( equals( $expected, $actual ), "access-list 1" );
@@ -378,19 +501,33 @@ ok( equals( $expected, $actual ), "access-list 1" );
 $string =
 q{access-list acl-outside line 1 extended permit ip host server1 eq 1024 any eq 80};
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'acl_dst_ip'   => 'any',
-	'acl_id'       => 'acl-outside',
-	'acl_action'   => 'permit',
-	'acl_dst_port' => '80',
-	'acl_src_port' => '1024',
-	'acl_line'     => '1',
-	'acl_protocol' => 'ip',
-	'acl_src_ip'   => 'server1',
-	'acl_type'     => 'extended'
+	'port_eq'      => 2,
+	'ACTIONS'      => 1,
+	'PROTOCOL'     => 1,
+	'ACL_TYPES'    => 1,
+	'acl_options'  => 1,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'acl_src_port' => 1,
+	'acl_protocol' => 1,
+	'ANY'          => 1,
+	'address'      => 2,
+	'NAME'         => 1,
+	'acl_dst_ip'   => 1,
+	'PORT_ID'      => 2,
+	'port'         => 2,
+	'acl_dst_port' => 1,
+	'DIGIT'        => 1,
+	'acl_line'     => 1,
+	'access_list'  => 1,
+	'acl_src_ip'   => 1,
+	'acl_type'     => 1
 };
 
 ok( equals( $expected, $actual ), "access-list 2" );
@@ -402,17 +539,29 @@ ok( equals( $expected, $actual ), "access-list 2" );
 $string =
 q{access-list acl-outside permit tcp OG_NETWORK customerX OG_SERVICE high_ports host server1 eq 80};
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'acl_action'   => 'permit',
-	'acl_id'       => 'acl-outside',
-	'acl_dst_port' => '80',
-	'acl_src_port' => 'high_ports',
-	'acl_dst_ip'   => 'server1',
-	'acl_protocol' => 'tcp',
-	'acl_src_ip'   => 'customerX'
+	'port_eq'      => 1,
+	'ACTIONS'      => 1,
+	'PROTOCOL'     => 1,
+	'acl_options'  => 1,
+	'GROUP_REF'    => 2,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'acl_src_port' => 1,
+	'acl_protocol' => 1,
+	'address'      => 2,
+	'NAME'         => 1,
+	'acl_dst_ip'   => 1,
+	'PORT_ID'      => 1,
+	'port'         => 2,
+	'acl_dst_port' => 1,
+	'access_list'  => 1,
+	'acl_src_ip'   => 1
 };
 
 ok( equals( $expected, $actual ), "access-list 3" );
@@ -424,17 +573,28 @@ ok( equals( $expected, $actual ), "access-list 3" );
 $string =
 q{access-list acl-outside permit OG_SERVICE srv2 OG_NETWORK customerX OG_SERVICE high_ports host server1 eq 80};
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'acl_action'   => 'permit',
-	'acl_id'       => 'acl-outside',
-	'acl_dst_port' => '80',
-	'acl_src_port' => 'high_ports',
-	'acl_dst_ip'   => 'server1',
-	'acl_src_ip'   => 'customerX',
-	'acl_protocol' => 'srv2'
+	'port_eq'      => 1,
+	'NAME'         => 1,
+	'acl_dst_ip'   => 1,
+	'ACTIONS'      => 1,
+	'PORT_ID'      => 1,
+	'port'         => 2,
+	'acl_options'  => 1,
+	'GROUP_REF'    => 3,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'acl_dst_port' => 1,
+	'acl_src_port' => 1,
+	'acl_protocol' => 1,
+	'access_list'  => 1,
+	'address'      => 2,
+	'acl_src_ip'   => 1
 };
 
 ok( equals( $expected, $actual ), "access-list 4" );
@@ -446,15 +606,24 @@ ok( equals( $expected, $actual ), "access-list 4" );
 $string =
   q{access-list acl-outside permit object citrix any OG_NETWORK citrix_servers};
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'acl_action'   => 'permit',
-	'acl_id'       => 'acl-outside',
-	'acl_dst_ip'   => 'citrix_servers',
-	'acl_protocol' => 'citrix',
-	'acl_src_ip'   => 'any'
+	'acl_dst_ip'   => 1,
+	'ACTIONS'      => 1,
+	'OBJECT_REF'   => 1,
+	'GROUP_REF'    => 1,
+	'acl_options'  => 1,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'acl_protocol' => 1,
+	'access_list'  => 1,
+	'ANY'          => 1,
+	'address'      => 2,
+	'acl_src_ip'   => 1
 };
 
 ok( equals( $expected, $actual ), "access-list 5" );
@@ -466,17 +635,28 @@ ok( equals( $expected, $actual ), "access-list 5" );
 $string =
 q{access-list acl-outside permit OG_SERVICE srv2 OG_NETWORK customerX OG_SERVICE high_ports net1 255.255.255.0 eq www};
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'acl_action'   => 'permit',
-	'acl_id'       => 'acl-outside',
-	'acl_dst_port' => 'www',
-	'acl_src_port' => 'high_ports',
-	'acl_dst_ip'   => 'net1 255.255.255.0',
-	'acl_src_ip'   => 'customerX',
-	'acl_protocol' => 'srv2'
+	'port_eq'      => 1,
+	'NAMED_NET'    => 1,
+	'acl_dst_ip'   => 1,
+	'ACTIONS'      => 1,
+	'PORT_ID'      => 1,
+	'port'         => 2,
+	'acl_options'  => 1,
+	'GROUP_REF'    => 3,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'acl_dst_port' => 1,
+	'acl_src_port' => 1,
+	'acl_protocol' => 1,
+	'access_list'  => 1,
+	'address'      => 2,
+	'acl_src_ip'   => 1
 };
 
 ok( equals( $expected, $actual ), "access-list 6" );
@@ -490,16 +670,29 @@ $string =
 
 $tree = $parser->parse($string);
 
-$actual = visit($tree);
+$actual = productions($tree);
 
 $expected = {
-	'acl_action'   => 'permit',
-	'acl_id'       => 'acl-outside',
-	'acl_dst_port' => 'www',
-	'acl_src_port' => '1024 65535',
-	'acl_dst_ip'   => 'server1',
-	'acl_protocol' => 'ip',
-	'acl_src_ip'   => 'any'
+	'PORT_RANGE'   => 1,
+	'ACTIONS'      => 1,
+	'PROTOCOL'     => 1,
+	'acl_options'  => 1,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'acl_src_port' => 1,
+	'acl_protocol' => 1,
+	'ANY'          => 1,
+	'address'      => 2,
+	'port_range'   => 1,
+	'NAME'         => 1,
+	'port_gt'      => 1,
+	'acl_dst_ip'   => 1,
+	'port'         => 2,
+	'PORT_GT'      => 1,
+	'acl_dst_port' => 1,
+	'access_list'  => 1,
+	'acl_src_ip'   => 1
 };
 
 ok( equals( $expected, $actual ), "access-list 7" );
@@ -513,17 +706,25 @@ q{access-list acl-outside extended permit OG_PROTOCOL sip_transport OG_NETWORK v
 
 $tree = $parser->parse($string);
 
-$actual = visit($tree);
+$actual = productions($tree);
 
 $expected = {
-	'acl_dst_ip'   => 'voip_srvs',
-	'acl_id'       => 'acl-outside',
-	'acl_action'   => 'permit',
-	'acl_src_port' => 'high_ports',
-	'acl_dst_port' => 'sip_ports',
-	'acl_protocol' => 'sip_transport',
-	'acl_src_ip'   => 'voip_nets',
-	'acl_type'     => 'extended'
+	'ACTIONS'      => 1,
+	'ACL_TYPES'    => 1,
+	'acl_options'  => 1,
+	'GROUP_REF'    => 5,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'acl_src_port' => 1,
+	'acl_protocol' => 1,
+	'address'      => 2,
+	'acl_dst_ip'   => 1,
+	'port'         => 2,
+	'acl_dst_port' => 1,
+	'access_list'  => 1,
+	'acl_src_ip'   => 1,
+	'acl_type'     => 1
 };
 
 ok( equals( $expected, $actual ), "access-list 8" );
@@ -536,16 +737,24 @@ $string =
 q{access-list acl-outside line 1 extended permit object citrix object internal_net object citrix_net};
 
 $tree   = $parser->parse($string);
-$actual = visit($tree);
+$actual = productions($tree);
 
 $expected = {
-	'acl_action'   => 'permit',
-	'acl_id'       => 'acl-outside',
-	'acl_dst_ip'   => 'citrix_net',
-	'acl_protocol' => 'citrix',
-	'acl_line'     => '1',
-	'acl_src_ip'   => 'internal_net',
-	'acl_type'     => 'extended'
+	'acl_dst_ip'   => 1,
+	'ACTIONS'      => 1,
+	'OBJECT_REF'   => 3,
+	'ACL_TYPES'    => 1,
+	'acl_options'  => 1,
+	'STRING'       => 1,
+	'acl_id'       => 1,
+	'acl_action'   => 1,
+	'DIGIT'        => 1,
+	'acl_line'     => 1,
+	'acl_protocol' => 1,
+	'access_list'  => 1,
+	'address'      => 2,
+	'acl_src_ip'   => 1,
+	'acl_type'     => 1
 };
 
 ok( equals( $expected, $actual ), "access-list object service" );
@@ -558,17 +767,28 @@ $string =
 q{access-list acl-outside line 1 extended permit icmp any any OG_ICMP-TYPE safe-icmp};
 
 $tree   = $parser->parse($string);
-$actual = visit($tree);
+$actual = productions($tree);
 
 $expected = {
-	'acl_dst_ip'    => 'any',
-	'acl_icmp_type' => 'safe-icmp',
-	'acl_id'        => 'acl-outside',
-	'acl_action'    => 'permit',
-	'acl_line'      => '1',
-	'acl_protocol'  => 'icmp',
-	'acl_src_ip'    => 'any',
-	'acl_type'      => 'extended'
+	'ACTIONS'       => 1,
+	'PROTOCOL'      => 1,
+	'ACL_TYPES'     => 1,
+	'GROUP_REF'     => 1,
+	'acl_icmp_type' => 1,
+	'acl_options'   => 1,
+	'STRING'        => 1,
+	'acl_id'        => 1,
+	'acl_action'    => 1,
+	'acl_protocol'  => 1,
+	'ANY'           => 2,
+	'address'       => 2,
+	'acl_dst_ip'    => 1,
+	'DIGIT'         => 1,
+	'acl_dst_port'  => 1,
+	'acl_line'      => 1,
+	'access_list'   => 1,
+	'acl_src_ip'    => 1,
+	'acl_type'      => 1
 };
 
 ok( equals( $expected, $actual ), "access-list icmp-type" );
@@ -576,74 +796,34 @@ ok( equals( $expected, $actual ), "access-list icmp-type" );
 #
 # access-group
 #
+
 $string = q{
 access-group acl-outside in interface outside
 };
 
-$tree   = $parser->parse($string);
-$actual = visit($tree);
+$tree = $parser->parse($string);
+
+$actual = productions($tree);
 
 $expected = {
-	'ag_interface' => 'outside',
-	'ag_direction' => 'in',
-	'ag_id'        => 'acl-outside'
+	'ag_interface'  => 1,
+	'IF_REF'        => 1,
+	'ACL_DIRECTION' => 1,
+	'access_group'  => 1,
+	'RULE_REF'      => 1,
+	'ag_direction'  => 1,
+	'ag_id'         => 1
 };
 
-ok( equals( $expected, $actual ), "access-group" );
+ok(	equals( $expected, $actual ), "access-group" );
 
 #
 # Finished tests
 #
 
-sub visit {
+sub productions {
 	my ($node) = @_;
 
-	my $Rule_To_Key_Map = {
-		"hostname"                => 1,
-		"names"                   => 1,
-		"NAME"                    => 1,
-		"interface"               => 1,
-		"if_name"                 => 1,
-		"sec_level"               => 1,
-		"if_ip"                   => 1,
-		"if_mask"                 => 1,
-		"if_standby"              => 1,
-		"object"                  => 1,
-		"object_id"               => 1,
-		"object_host"             => 1,
-		"object_range"            => 1,
-		"object_network"          => 1,
-		"object_service_protocol" => 1,
-		"object_service_src"      => 1,
-		"object_service_dst"      => 1,
-		"object_icmp"             => 1,
-		"object_group"            => 1,
-		"og_id"                   => 1,
-		"og_protocol"             => 1,
-		"og_object"               => 1,
-		"og_so_protocol"          => 1,
-		"og_so_src_port"          => 1,
-		"og_so_dst_port"          => 1,
-		"acl_action"              => 1,
-		"acl_id"                  => 1,
-		"acl_line"                => 1,
-		"acl_type"                => 1,
-		"acl_protocol"            => 1,
-		"acl_protocol_group"      => 1,
-		"acl_service_group"       => 1,
-		"acl_service_object"      => 1,
-		"acl_src_ip"              => 1,
-		"acl_src_port"            => 1,
-		"acl_dst_ip"              => 1,
-		"acl_dst_port"            => 1,
-		"acl_icmp_type"           => 1,
-		"acl_remark"              => 1,
-		"ag_id"                   => 1,
-		"ag_direction"            => 1,
-		"ag_interface"            => 1,
-	};
-
-	my $parent_key;
 	my $result;
 
 	# set s of explored vertices
@@ -651,31 +831,13 @@ sub visit {
 
 	#stack is all neighbors of s
 	my @stack;
-	push @stack, [ $node, $parent_key ];
-
-	my $key;
+	push @stack, $node;
 
 	while (@stack) {
 
-		my $rec = pop @stack;
-
-		$node       = $rec->[0];
-		$parent_key = $rec->[1];    #undef for root
+		my $node = pop @stack;
 
 		next if ( $seen{$node}++ );
-
-		my $rule_id = ref($node);
-
-		if ( exists( $Rule_To_Key_Map->{$rule_id} ) ) {
-			$parent_key = $rule_id;
-		}
-
-		if ( $rule_id eq "names" ) {
-			$result->{'name'}        = $node->{NAME}->{__VALUE__};
-			$result->{'ip'}          = $node->{IPADDRESS}->{__VALUE__};
-			$result->{'description'} = $node->{REMARKS}->{__VALUE__};
-			return $result;
-		}
 
 		foreach my $key ( keys %$node ) {
 
@@ -685,19 +847,9 @@ sub visit {
 
 			if ( blessed($next) ) {
 
-				if ( exists( $next->{__VALUE__} ) ) {
+				$result->{ ref($next) }++;
 
-			   #print ref($node), " ", ref($next), " ", $next->{__VALUE__},"\n";
-					my $rule  = ref($node);
-					my $token = $next->{__VALUE__};
-					$result->{$parent_key} = $token;
-
-					#print $rule, " ", $result->{$rule}, "\n";
-				}
-
-				push @stack, [ $next, $parent_key ];
-
-				#push @stack, $next;
+				push @stack, $next;
 			}
 		}
 	}

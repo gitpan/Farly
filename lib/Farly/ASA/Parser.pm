@@ -7,7 +7,7 @@ use Carp;
 use Log::Log4perl qw(get_logger);
 use Parse::RecDescent;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 $::RD_ERRORS = 1; # Make sure the parser dies when it encounters an error
 #$::RD_WARN   = 1; # Enable warnings. This will warn on unused rules &c.
@@ -60,9 +60,9 @@ sub _grammar {
 startrule :
 		object_group EOL
 	|	access_list EOL
-	|	names EOL
+	|	named_ip EOL
 	|	interface EOL
-	|   object EOL
+	|	object EOL
 	|	access_group EOL
 	|	hostname EOL
 	|	route EOL
@@ -75,9 +75,15 @@ hostname :
 # names
 #
 
-names :
-		'name' IPADDRESS NAME 'description' REMARKS
-	|   'name' IPADDRESS NAME
+named_ip :
+		'name' IPADDRESS name
+
+name :
+		NAME_ID name_comment
+	|	NAME_ID
+
+name_comment :
+		'description' REMARKS
 
 #
 # interfaces
@@ -131,15 +137,31 @@ object_address :
 
 object_host :
 		'host' IPADDRESS
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'HOST'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 object_range :
 		'range' IPRANGE
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'RANGE'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 object_network :
 		'subnet' IPNETWORK
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'NETWORK'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 object_service :
 		'service' object_service_protocol
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'SERVICE'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 object_service_protocol :
 		PROTOCOL object_service_src
@@ -182,24 +204,52 @@ og_object :
 
 og_network_object :
 		'network-object' address
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'NETWORK'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 og_port_object :
 		'port-object' port
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'PORT'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 og_group_object :
 		'group-object' GROUP_REF
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'GROUP'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 og_protocol_object :
 		'protocol-object' PROTOCOL
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'PROTOCOL'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 og_description :
 		'description' REMARKS
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'COMMENT'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 og_icmp_object :
 		'icmp-object' ICMP_TYPE
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'ICMP_TYPE'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 og_service_object :
 		'service-object' og_so_protocol
+{
+	$item{'MEMBER_TYPE'} = bless( {'__VALUE__' => 'SERVICE'}, 'MEMBER_TYPE' );
+	bless \%item, $item[0];
+}
 
 og_so_protocol :
 		PROTOCOL og_so_dst_port
@@ -280,7 +330,7 @@ acl_dst_ip :
 
 acl_dst_port : 
 		port acl_options
-	|   acl_icmp_type acl_options
+	|	acl_icmp_type acl_options
 
 #
 # icmp_types
@@ -288,7 +338,7 @@ acl_dst_port :
 
 acl_icmp_type :
 		'OG_ICMP-TYPE' GROUP_REF
-	|   ICMP_TYPE
+	|	ICMP_TYPE
 
 #
 # access-list options
@@ -306,19 +356,19 @@ acl_logging :
 	|	'log' acl_time_range
 {
 	$item{'LOG_LEVEL'} = bless( {'__VALUE__' => '6'}, 'LOG_LEVEL' );
-	bless \%item, $item[0];
+	bless \%item, 'acl_log_level';
 }
 
 	|	'log' acl_inactive
 {
 	$item{'LOG_LEVEL'} = bless( {'__VALUE__' => '6'}, 'LOG_LEVEL' );
-	bless \%item, $item[0];
+	bless \%item, 'acl_log_level';
 }
 
 	|	'log'
 {
 	$item{'LOG_LEVEL'} = bless( {'__VALUE__' => '6'}, 'LOG_LEVEL' );
-	bless \%item, $item[0];
+	bless \%item, 'acl_log_level';
 }
 
 acl_log_level :
@@ -363,10 +413,6 @@ ag_interface :
 # routes
 #
 
-#
-# routes
-#
-
 route :
 		'route' route_interface
 
@@ -375,6 +421,7 @@ route_interface :
 
 route_dst :
 		IPNETWORK route_nexthop
+	|	NAMED_NET route_nexthop
 	|	DEFAULT_ROUTE route_nexthop
 
 route_nexthop :
@@ -401,6 +448,7 @@ route_tunneled :
 #
 # "object" should be fine here because "object" can not  
 # be used to specify ports 
+#
 
 address :
 		'host' IPADDRESS
@@ -449,7 +497,12 @@ STRING :
 DIGIT :
 		/\d+/
 
+# converted to an IP address
 NAME :
+		/((^|\s[a-zA-Z])(\.|[0-9a-zA-Z_-]+)+)/
+
+# not converted to an IP address
+NAME_ID :
 		/((^|\s[a-zA-Z])(\.|[0-9a-zA-Z_-]+)+)/
 
 IF_REF :
@@ -540,7 +593,7 @@ ACL_STATUS :
 		'inactive'
 
 STATE :		
-    	'enable'
+		'enable'
 	|	'disable'
 
 TUNNELED :
@@ -552,7 +605,14 @@ LOG_LEVEL :
 	| 'disable'
 
 EOL :
-		/$/	
+		/$/
+		
+#
+# Imaginary Tokens
+#
+# MEMBER_TYPE
+#
+
 };
 
 	return $grammar;

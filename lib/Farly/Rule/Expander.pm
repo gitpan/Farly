@@ -1,10 +1,9 @@
-package Farly::Rules;
+package Farly::Rule::Expander;
 
 use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Data::Dumper;
 use Log::Log4perl qw(get_logger);
 
 our $VERSION = '0.11';
@@ -283,11 +282,11 @@ __END__
 
 =head1 NAME
 
-Farly::Rules - - Deprecated - is now Farly::Rule::Expander
+Farly::Rule::Expander - Convert a firewall rule configuration into a raw rule set
 
 =head1 DESCRIPTION
 
-Farly::Rules converts a firewall rule configuration into a raw rule set.
+Farly::Rule::Expander converts a firewall rule configuration into a raw rule set.
 The raw ruleset is an Object::KVC::List<Object::KVC::Hash> containing
 all firewall rules.  
 
@@ -300,7 +299,7 @@ firewall rule is for specific packet to firewall rule matching.
 
 The constructor. The firewall configuration is provided.
 
-  $rule_expander = Farly::Rules->new( <Object::KVC::List> );
+  $rule_expander = Farly::Rule::Expander->new( <Object::KVC::List> );
 
 =head2 expand_all()
 
@@ -319,7 +318,7 @@ provided result container.
 
 =head1 COPYRIGHT AND LICENCE
 
-Farly::Rules
+Farly::Rule::Expander
 Copyright (C) 2012  Trystan Johnson
 
 This program is free software: you can redistribute it and/or modify

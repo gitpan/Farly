@@ -10,7 +10,7 @@ use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 our $AUTOLOAD;
 
 #each token type maps to a class
@@ -18,11 +18,13 @@ our $Token_Class_Map = {
 	'STRING'      => 'Object::KVC::String',
 	'DIGIT'       => 'Object::KVC::Integer',
 	'NAME'        => 'Object::KVC::String',            #method replaces name with IP
+	'NAME_ID'     => 'Object::KVC::String',            #this is just the name string	
 	'IF_REF'      => 'Object::KVC::HashRef',
 	'OBJECT_REF'  => 'Object::KVC::HashRef',
 	'GROUP_REF'   => 'Object::KVC::HashRef',
 	'RULE_REF'    => 'Object::KVC::HashRef',
 	'GROUP_TYPE'  => 'Object::KVC::String',
+	'MEMBER_TYPE' => 'Object::KVC::String',
 	'OBJECT_TYPE' => 'Object::KVC::String',
 	'ANY'         => 'Farly::IPv4::Network',			#method ANY = '0.0.0.0 0.0.0.0'
 	'IPADDRESS'   => 'Farly::IPv4::Address',
@@ -105,37 +107,40 @@ sub visit {
 
 		next if ( $seen{$node}++ );
 
+		#visit this node if its a token
 		if ( exists( $node->{'__VALUE__'} ) ) {
 			my $method = ref($node);
 			$self->$method($node);
+			next;
 		}
-		elsif ( $node->isa('names') ) {
-			$self->_new_name($node);
+		
+		# add name info the the names "symbol table"
+		if ( $node->isa('named_ip') ) {
+			$self->named_ip($node);
 		}
-		else {
 
-			foreach my $key ( keys %$node ) {
+		# continue walking the parse tree
+		foreach my $key ( keys %$node ) {
 
-				next if ( $key eq 'EOL' );
+			next if ( $key eq 'EOL' );
 
-				my $next = $node->{$key};
+			my $next = $node->{$key};
 
-				if ( blessed($next) ) {
+			if ( blessed($next) ) {
 
-					push @stack, $next;
-				}
+				push @stack, $next;
 			}
 		}
 	}
 	return 1;
 }
 
-sub _new_name {
+sub named_ip {
 	my ( $self, $node ) = @_;
 
 	my $logger = get_logger(__PACKAGE__);
 
-	my $name = $node->{NAME}->{__VALUE__}
+	my $name = $node->{name}->{NAME_ID}->{__VALUE__}
 	  or confess "$self error: name not found for ", ref($node);
 
 	my $ip = $node->{IPADDRESS}->{__VALUE__}
@@ -221,6 +226,7 @@ sub PORT_RANGE {
 	if ( defined $self->port_formatter()->as_integer($low) ) {
 		$low = $self->port_formatter()->as_integer($low);
 	}
+
 	if ( defined $self->port_formatter()->as_integer($high) ) {
 		$high = $self->port_formatter()->as_integer($high);
 	}
@@ -249,10 +255,10 @@ sub PORT_LT {
 }
 
 sub _new_ObjectRef {
-	my ( $self, $token_type, $value ) = @_;
+	my ( $self, $token_class, $value ) = @_;
 
-	my $entry = $Entry_Map->{$token_type}
-	  or confess "No token type to ENTRY mapping for token $token_type\n";
+	my $entry = $Entry_Map->{$token_class}
+	  or confess "No token type to ENTRY mapping for token $token_class\n";
 
 	my $ce = Object::KVC::HashRef->new();
 
@@ -265,31 +271,31 @@ sub _new_ObjectRef {
 sub AUTOLOAD {
 	my ( $self, $node ) = @_;
 
-	my $type = ref($self) or confess "$self is not an object";
+	my $type = ref($self)
+	  or confess "$self is not an object";
 
 	confess "tree node for $type required"
 	  unless defined($node);
 
-	my $token_type = ref($node);
+	confess "value not found in node ",ref($node)
+	  unless defined( $node->{'__VALUE__'} );
 
-	my $class = $Token_Class_Map->{$token_type}
-	  or confess "$self error: class not found for $token_type\n";
+	my $token_class = ref($node);
 
-	my $value;
-	defined( $node->{'__VALUE__'} ) 
-	  ? $value = $node->{'__VALUE__'}
-	  : confess "$self error: value not found in node $token_type\n";
+	my $class = $Token_Class_Map->{ $token_class }
+	  or confess "$self error: class not found for $token_class\n";
 
 	my $object;
-	if ( $class eq 'Object::KVC::HashRef' ) {
 
+	my $value = $node->{'__VALUE__'};
+
+	if ( $class eq 'Object::KVC::HashRef' ) {
 		#need to set 'ENTRY' and 'ID' properties
-		$object = $self->_new_ObjectRef( $token_type, $value );
+		$object = $self->_new_ObjectRef( $token_class, $value );
 	}
 	else {
-
 		#create the object right away
-		$object = $class->new($value);
+		$object = $class->new( $value );
 	}
 
 	$node->{'__VALUE__'} = $object;

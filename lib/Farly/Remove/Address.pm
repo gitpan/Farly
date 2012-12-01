@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 sub new {
 	my ( $class, $container ) = @_;
@@ -111,6 +111,7 @@ sub _collect_garbage {
 	my $RULE   = Object::KVC::String->new('RULE');
 	my $OBJECT = Object::KVC::String->new('OBJECT');
 	my $INTERFACE = Object::KVC::String->new('INTERFACE');
+	my $ROUTE = Object::KVC::String->new('ROUTE');
 
 	my @stack;
 	my $remove = Object::KVC::Set->new();
@@ -193,6 +194,9 @@ sub _collect_garbage {
 
 		}
 		elsif ( $object->get('ENTRY')->equals($INTERFACE) ) {
+			next;
+		}
+		elsif ( $object->get('ENTRY')->equals($ROUTE) ) {
 			next;
 		}
 		else {

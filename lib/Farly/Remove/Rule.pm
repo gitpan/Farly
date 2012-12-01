@@ -4,9 +4,9 @@ use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Farly::Rules;
+use Farly::Rule::Expander;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 # one object per firewall
 sub new {
@@ -117,7 +117,7 @@ sub remove {
 	my @remove_rules = sort { $a <=> $b } keys %{ $removed_index->get_index };
 
 	# create a rule expander object
-	my $rule_expander = Farly::Rules->new( $self->config );
+	my $rule_expander = Farly::Rule::Expander->new( $self->config );
 
 	# check each config rule to see if it uses a group or not
 	foreach my $line_number (@remove_rules) {
