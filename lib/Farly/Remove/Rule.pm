@@ -6,7 +6,7 @@ use warnings;
 use Carp;
 use Farly::Rule::Expander;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 # one object per firewall
 sub new {
@@ -169,7 +169,7 @@ __END__
 
 =head1 NAME
 
-Farly::Remove::Rule - Removes a list firewall rule entries
+Farly::Remove::Rule - Removes a list of firewall rule entries
 
 =head1 DESCRIPTION
 
