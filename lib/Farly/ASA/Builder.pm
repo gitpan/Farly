@@ -15,73 +15,75 @@ use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.12';
-our @ISA = 'Farly::Builder';
+our $VERSION = '0.20';
+our @ISA     = 'Farly::Builder';
 
 sub new {
-	my ( $class ) = @_;
-	#call the constructor of the parent class
-	my $self = $class->SUPER::new();
-	bless $self, $class;
+    my ($class) = @_;
 
-	my $logger = get_logger(__PACKAGE__);
-	$logger->info("$self NEW");
-	
-	return $self;
+    #call the constructor of the parent class
+    my $self = $class->SUPER::new();
+    bless $self, $class;
+
+    my $logger = get_logger(__PACKAGE__);
+    $logger->info("$self NEW");
+
+    return $self;
 }
 
 sub run {
-	my ( $self ) = @_;
+    my ($self) = @_;
 
-	my $logger = get_logger(__PACKAGE__);
+    my $logger = get_logger(__PACKAGE__);
 
-	my $filter    = Farly::ASA::Filter->new();
-	my $parser    = Farly::ASA::Parser->new();
-	my $annotator = Farly::ASA::Annotator->new();
-	my $rewriter  = Farly::ASA::Rewriter->new();
+    my $filter    = Farly::ASA::Filter->new();
+    my $parser    = Farly::ASA::Parser->new();
+    my $annotator = Farly::ASA::Annotator->new();
+    my $rewriter  = Farly::ASA::Rewriter->new();
     my $generator = Farly::ASA::Generator->new();
 
-	$filter->set_file( $self->file() );
+    $filter->set_file( $self->file() );
 
-	my @preprocessed_file = $filter->run();
-	
-	confess "configuration not recognized"
-		unless ( scalar(@preprocessed_file) > 0 );
-	
-	my $parse_tree;
+    my @preprocessed_file = $filter->run();
 
-	foreach my $line ( @preprocessed_file ) {
+    confess "configuration not recognized"
+      unless ( scalar(@preprocessed_file) > 0 );
 
-		eval {
-			#get the parse tree for the current line
-			$parse_tree = $parser->parse($line);
-	
-			#turn the tokens into objects
-			$annotator->visit($parse_tree);
-				
-			#rewrite the parse tree into an abstract syntax tree (AST)
-			my $ast = $rewriter->rewrite($parse_tree);
+    my $parse_tree;
 
-			#convert the AST into an Object::KVC::Hash object
-			#which is stored in the generator's container object
-			$generator->visit($ast);
-		};
-		if ($@) {
-			my $err = $@;
-			$logger->fatal($self->file(),"\n $line \n $err\n");
-			chomp($line);
-			die "Problem at line :\n$line\nError : $@";
-		}
-		
-	}
-	
-	$self->{CONTAINER} = $generator->container();
+    foreach my $line (@preprocessed_file) {
 
-	return;
+        eval {
+
+            #get the parse tree for the current line
+            $parse_tree = $parser->parse($line);
+
+            #turn the tokens into objects
+            $annotator->visit($parse_tree);
+
+            #rewrite the parse tree into an abstract syntax tree (AST)
+            my $ast = $rewriter->rewrite($parse_tree);
+
+            #convert the AST into an Farly::Object object
+            #which is stored in the generator's container object
+            $generator->visit($ast);
+        };
+        if ($@) {
+            my $err = $@;
+            $logger->fatal( $self->file(), "\n $line \n $err\n" );
+            chomp($line);
+            die "Problem at line :\n$line\nError : $@";
+        }
+
+    }
+
+    $self->{CONTAINER} = $generator->container();
+
+    return;
 }
 
 sub result {
-	return $_[0]->{CONTAINER};
+    return $_[0]->{CONTAINER};
 }
 
 1;
@@ -95,10 +97,10 @@ Farly::ASA::Builder - A vendor specific concrete builder class
 
 Farly::ASA::Builder is a concrete builder which handles the process of
 converting a Cisco ASA firewall configuration into the corresponding
-Object::KVC::List<Object::KVC::Hash> firewall device model.
+Farly::Object::List<Farly::Object> firewall device model.
 
 It accepts an firewall configuration IO::File object and returns an
-Object::KVC::List<Object::KVC::Hash> when finished.
+Farly::Object::List<Farly::Object> when finished.
 
 Farly::ASA::Builder dies on error, highlighting the line of configuration
 which caused the exception.

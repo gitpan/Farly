@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::Simple tests => 22;
+use Test::Simple tests => 26;
 
 use Farly::IPv4::Address;
 use Farly::IPv4::Network;
@@ -72,3 +72,12 @@ ok ( ! $net5->adjacent($net15), "! adjacent net" );
 ok ( $net15->adjacent($ip5), " adjacent ip");
 
 ok ( $net18->as_string() eq "10.20.31.0 255.255.255.128", "wild card mask in");
+
+ok( $net11->compare( $net12 ) == -1, "compare networks lt" );
+
+ok( $net12->compare( $net11 ) == 1,"compare networks gt" );
+
+ok( $net13->compare( $net3 ) == 1, "compare networks gt 2" );
+
+ok( $net11->compare( $net14 ) == 0, "compare networks equal" );
+

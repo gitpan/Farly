@@ -1,44 +1,42 @@
-package Farly::Transport::PortGT;
+package Farly::Object::Ref;
 
 use 5.008008;
 use strict;
 use warnings;
-use Carp;
-use Farly::Transport::Port;
 
-our @ISA     = qw(Farly::Transport::Port);
 our $VERSION = '0.20';
 
-sub last {
-    return 65535;
-}
+require Farly::Object;
+our @ISA = qw(Farly::Object);
 
 1;
 __END__
 
 =head1 NAME
 
-Farly::Transport::PortGT - TCP or UDP port number 'greater than' class
+Farly::Object::Ref - A reference object
+
+=head1 SYNOPSIS
+
+  use Farly::Object::Ref;
+  use Farly::Value::String;
+  
+  my $object1 = Farly::Object::Ref->new();
+  
+  $object1->set( 'type', Farly::Value::String->new('GROUP') );
+  $object1->set( 'id',   Farly::Value::String->new('id1234') );
 
 =head1 DESCRIPTION
 
-This class represents TCP or UDP port numbers greater than the 
-given port number.
+A Farly::Object::Ref is a reference object which refers to the identity
+of one or more Farly::Objects in the same Farly::Object::List.
 
-Inherits from Farly::Transport::Port.
+Farly::Object::Ref is a Farly::Object. 
 
-=head1 METHODS
+=head1 COPYRIGHT AND LICENCE
 
-=head2 last()
-
-Returns the port number, 65535
-
-  $8_bit_int = $port->last();
-
-=head1 COPYRIGHT AND LICENSE
-
-Farly::Transport::PortGT
-Copyright (C) 2012  Trystan Johnson
+Farly::Object::Ref
+Copyright (C) 2013  Trystan Johnson
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

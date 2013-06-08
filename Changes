@@ -12,7 +12,7 @@
   - Fixed bug in Farly::Transport::Protocol::intersects()
   - Fixed bug in ::ASA::Parser names rule
   - Added Line number printing in ASA.tt
-  - "DIGIT" and "ICMP_TYPE" Token to Object::KVC::Integer
+  - "DIGIT" and "ICMP_TYPE" Token to Farly::Value::Integer
   
 0.05 - 25 February 2012
   - Fixed asa_Parser.t names test
@@ -48,7 +48,7 @@
   - Fixed documentation mistakes
   - Improved Makefile.PL
   - Fixed bug in Farly::Remove::Address
-  - Added 'route' support
+  - Added 'route' support patches from Lukas Thiemeier
  
 0.10 - November 2012
   - Fixed documentation mistakes
@@ -68,6 +68,21 @@
    - Farly::Rules and Farly::Optimizer are deprecated, renamed to Farly::Rule::Expander
      and Farly::Rule::Optimizer
  
- 0.12 - January 2012
+0.12 - January 2012
    - translate failure logs to file
    - added META.YML, LICENSE, repository link
+
+0.20 - June 2013
+   - added compare method to value objects
+   - moved Object::KVC into Farly
+		Object::KVC::Hash => Farly::Object
+		Object::KVC::HashRef => Farly::Object::Ref
+		Object::KVC::List => Farly::Object::List
+		Object::KVC::Set => Farly::Object::Set
+		Object::KVC::String => Farly::Value::String
+		Farly::Value::Integer => Farly::Value::Integer
+   - added Farly::Object::Aggregate
+   - optimised Farly::Rule::Optimizer
+   - fixed Farly::Remove::Rule - now using 'REMOVE' property
+   - bug fixes and all protocols test from Lukas Thiemeier
+ 

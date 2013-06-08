@@ -4,58 +4,42 @@ use 5.008008;
 use strict;
 use warnings;
 
-our $VERSION = '0.12';
-
-our $Int_To_String = {
-	51  => "ah",
-	88  => "eigrp",
-	50  => "esp",
-	47  => "gre",
-	1   => "icmp",
-	58  => "icmp6",
-	2   => "igmp",
-	9   => "igrp",
-	0   => "ip",
-	4   => "ipinip",
-	94  => "nos",
-	89  => "ospf",
-	108 => "pcp",
-	103 => "pim",
-	109 => "snp",
-	6   => "tcp",
-	17  => "udp",
-};
+our $VERSION = '0.20';
 
 our $String_To_Int = {
-	"ah"     => 51,
-	"eigrp"  => 88,
-	"esp"    => 50,
-	"gre"    => 47,
-	"icmp"   => 1,
-	"icmp6"  => 58,
-	"igmp"   => 2,
-	"igrp"   => 9,
-	"ip"     => 0,
-	"ipinip" => 4,
-	"nos"    => 94,
-	"ospf"   => 89,
-	"pcp"    => 108,
-	"pim"    => 103,
-	"snp"    => 109,
-	"tcp"    => 6,
-	"udp"    => 17,
+    "ah"     => 51,
+    "eigrp"  => 88,
+    "esp"    => 50,
+    "ipsec"  => 50,
+    "gre"    => 47,
+    "pptp"   => 47,
+    "icmp"   => 1,
+    "icmp6"  => 58,
+    "igmp"   => 2,
+    "igrp"   => 9,
+    "ip"     => 0,
+    "ipinip" => 4,
+    "nos"    => 94,
+    "ospf"   => 89,
+    "pcp"    => 108,
+    "pim"    => 103,
+    "snp"    => 109,
+    "tcp"    => 6,
+    "udp"    => 17,
 };
 
+our $Int_To_String = { reverse %$String_To_Int };
+
 sub new {
-	return bless {}, $_[0];
+    return bless {}, $_[0];
 }
 
 sub as_string {
-	return $Int_To_String->{ $_[1] }; 
+    return $Int_To_String->{ $_[1] };
 }
 
 sub as_integer {
-	return $String_To_Int->{ $_[1] };
+    return $String_To_Int->{ $_[1] };
 }
 
 1;
