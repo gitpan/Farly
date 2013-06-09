@@ -7,7 +7,7 @@ use Carp;
 use Log::Log4perl qw(get_logger);
 use Farly::Object::Aggregate;
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 sub new {
     my ( $class, $fw ) = @_;
@@ -79,8 +79,7 @@ sub _set_defaults {
             #if a dst port is not defined, define all ports
             if ( !$ce->has_defined('DST_PORT') ) {
 
-                $ce->set( 'DST_PORT',
-                    Farly::Transport::PortRange->new( 1, 65535 ) );
+                $ce->set( 'DST_PORT', Farly::Transport::PortRange->new( 1, 65535 ) );
                 $logger->debug( "SET DST PORT ", $ce->get('DST_PORT') );
             }
         }
