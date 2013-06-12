@@ -8,7 +8,7 @@ use Log::Log4perl qw(get_logger);
 
 use Farly::Template::Cisco;
 
-our $VERSION = '0.22';
+our $VERSION = '0.23';
 
 sub new {
     my ( $class, $rules ) = @_;
@@ -143,6 +143,8 @@ sub _ascending_icmp {
 sub set_l3 {
     my ($self) = @_;
 
+    my $logger = get_logger(__PACKAGE__);
+
     my $ICMP = Farly::Object->new();
     $ICMP->set( 'PROTOCOL', Farly::Transport::Protocol->new(1) );
 
@@ -160,7 +162,12 @@ sub set_l3 {
         next if $rule->matches($TCP);
         next if $rule->matches($UDP);
 
-        push @protocols, $rule->get('PROTOCOL')->as_string();
+        if ( $rule->has_defined('PROTOCOL') ) {
+            push @protocols, $rule->get('PROTOCOL')->as_string();
+        }
+        else {
+            $logger->info( "set_l3 skipped ",$rule->dump() );
+        }
     }
 
     $self->{MODE}       = 'L3';
