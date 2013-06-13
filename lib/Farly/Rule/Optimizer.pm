@@ -8,7 +8,7 @@ use Log::Log4perl qw(get_logger);
 
 use Farly::Template::Cisco;
 
-our $VERSION = '0.23';
+our $VERSION = '0.24';
 
 sub new {
     my ( $class, $rules ) = @_;
@@ -66,6 +66,9 @@ sub _is_valid_rule_set {
     $search->set( 'ID',    $id );
 
     foreach my $rule ( $self->rules->iter() ) {
+        if ( $rule->has_defined('REMOVE') ) {
+            die "found REMOVE in firewall ruleset ", $rule->dump();
+        }
         if ( !$rule->matches($search) ) {
             die "found invalid object in firewall ruleset ", $rule->dump();
         }
@@ -128,6 +131,10 @@ sub _ascending_l4 {
 
 sub set_icmp {
     my ($self) = @_;
+
+    my $logger = get_logger(__PACKAGE__);
+    $logger->info("set_icmp mode");
+
     $self->{MODE}       = 'ICMP';
     $self->{PROTOCOLS}  = [ 0, 1 ];
     $self->{PROPERTIES} = [ 'PROTOCOL', 'SRC_IP', 'DST_IP', 'ICMP_TYPE' ];
@@ -145,6 +152,8 @@ sub set_l3 {
 
     my $logger = get_logger(__PACKAGE__);
 
+    $logger->info("set_l3 mode");
+
     my $ICMP = Farly::Object->new();
     $ICMP->set( 'PROTOCOL', Farly::Transport::Protocol->new(1) );
 
@@ -154,7 +163,7 @@ sub set_l3 {
     my $UDP = Farly::Object->new();
     $UDP->set( 'PROTOCOL', Farly::Transport::Protocol->new(17) );
 
-    my @protocols;
+    my %protocols;
 
     foreach my $rule ( $self->rules->iter() ) {
 
@@ -163,15 +172,17 @@ sub set_l3 {
         next if $rule->matches($UDP);
 
         if ( $rule->has_defined('PROTOCOL') ) {
-            push @protocols, $rule->get('PROTOCOL')->as_string();
+            $protocols{ $rule->get('PROTOCOL')->as_string() }++;
         }
         else {
             $logger->info( "set_l3 skipped ",$rule->dump() );
         }
     }
 
+    my @p = keys %protocols;
+
     $self->{MODE}       = 'L3';
-    $self->{PROTOCOLS}  = \@protocols;
+    $self->{PROTOCOLS}  = \@p;
     $self->{PROPERTIES} = [ 'PROTOCOL', 'SRC_IP', 'DST_IP' ];
 }
 
@@ -193,10 +204,14 @@ sub run {
 sub _do_search {
     my ( $self, $action ) = @_;
 
+    my $logger = get_logger(__PACKAGE__);
+ 
     my $search = Farly::Object->new();
     my $result = Farly::Object::List->new();
 
     foreach my $protocol ( $self->_protocols ) {
+
+        $logger->info("searching for $action $protocol\n");
 
         $search->set( 'PROTOCOL', Farly::Transport::Protocol->new($protocol) );
         $search->set( 'ACTION',   Farly::Value::String->new($action) );
@@ -247,6 +262,9 @@ sub _inconsistent {
     for ( my $x = 0 ; $x != scalar( @{$s_a} ) ; $x++ ) {
 
         $rule_x = $s_a->[$x];
+
+        confess "error : rule_x defined remove"
+          if ( $rule_x->has_defined('REMOVE') );
 
         # iterate over rules of action !a
         for ( my $y = 0 ; $y != scalar( @{$s_an} ) ; $y++ ) {
@@ -347,6 +365,9 @@ sub _redundant {
         for ( my $y = $x + 1 ; $y != scalar( @{$s_a} ) ; $y++ ) {
 
             my $rule_y = $s_a->[$y];
+
+            #skip check if a rule_x made more than one rule_y redundant
+            next if $rule_y->has_defined('REMOVE');
 
             if ( !$rule_y->get('DST_IP')->gt( $rule_x->get('DST_IP') ) ) {
 
@@ -450,11 +471,8 @@ sub _optimize {
     my $permits = $self->_do_search( $self->p_action );
     my $denies  = $self->_do_search( $self->d_action );
 
-    my @arr_permits;
-    my @arr_denys;
-
-    @arr_permits = sort _ascending_LINE $permits->iter();
-    @arr_denys   = sort _ascending_LINE $denies->iter();
+    my @arr_permits = sort _ascending_LINE $permits->iter();
+    my @arr_denys   = sort _ascending_LINE $denies->iter();
 
     # find permit rules that contain deny rules
     # which are defined further down in the rule set

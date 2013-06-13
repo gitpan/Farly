@@ -10,7 +10,7 @@ use Log::Log4perl qw(get_logger);
 use Farly::Director;
 use Farly::Object;
 
-our $VERSION = '0.23';
+our $VERSION = '0.24';
 
 our ( $volume, $dir, $file ) = File::Spec->splitpath( $INC{'Farly.pm'} );
 Log::Log4perl::init( $volume . $dir . 'Farly/Log/Farly.conf' );
@@ -112,7 +112,7 @@ The constructor. No arguments required.
  
 =head2 process( <firewall type>, <configuration file>)
 
- my $container = $importer->process("ASA", "firewall-config.txt");
+ my $container = $importer->process('ASA', "firewall-config.txt");
 
 Returns Farly::Object::List<Farly::Object> firewall device model.
  
@@ -148,3 +148,4 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+>>>>>>> b460694554d3a18cb2a6120cba9bd88344c5b937
