@@ -4,9 +4,9 @@ use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Log::Log4perl qw(get_logger);
+use Log::Any qw($log);
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 sub new {
     my $class = shift;
@@ -16,9 +16,8 @@ sub new {
         CONTAINER => undef,
     };
     bless( $self, $class );
-
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info("$self NEW ");
+    
+    $log->info("$self NEW");
 
     return $self;
 }
@@ -27,9 +26,8 @@ sub set_file {
     my ( $self, $file ) = @_;
 
     $self->{FILE} = $file;
-
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info( "$self SET FILE TO ", $self->{FILE} );
+    
+    $log->info( "$self SET FILE TO " . $self->{FILE} );
 }
 
 sub file {

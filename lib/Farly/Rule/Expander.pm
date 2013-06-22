@@ -4,10 +4,10 @@ use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Log::Log4perl qw(get_logger);
+use Log::Any qw($log);
 use Farly::Object::Aggregate;
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 sub new {
     my ( $class, $fw ) = @_;
@@ -24,10 +24,9 @@ sub new {
     };
 
     bless $self, $class;
-
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info("$self NEW");
-    $logger->info( "$self CONFIG ", $self->{CONFIG} );
+    
+    $log->info("$self new");
+    $log->info( "$self CONFIG " . $self->{CONFIG} );
 
     $self->_init();
 
@@ -45,8 +44,6 @@ sub _init {
 
 sub _set_defaults {
     my ( $self, $ce ) = @_;
-
-    my $logger = get_logger(__PACKAGE__);
 
     my $RULE = Farly::Object->new();
     $RULE->set( 'ENTRY', Farly::Value::String->new('RULE') );
@@ -67,33 +64,33 @@ sub _set_defaults {
             || $ce->get('PROTOCOL')->equals($UDP) )
         {
 
-            $logger->debug("defaulting ports for $ce");
+            $log->debug("defaulting ports for $ce");
 
             #if a srcport is not defined, define all ports
             if ( !$ce->has_defined('SRC_PORT') ) {
 
                 $ce->set( 'SRC_PORT', Farly::Transport::PortRange->new( 1, 65535 ) );
-                $logger->debug( 'SET SOURCE PORT ', $ce->get('SRC_PORT') );
+                $log->debug( 'set SRC_PORT = ' . $ce->get('SRC_PORT') );
             }
 
             #if a dst port is not defined, define all ports
             if ( !$ce->has_defined('DST_PORT') ) {
 
                 $ce->set( 'DST_PORT', Farly::Transport::PortRange->new( 1, 65535 ) );
-                $logger->debug( "SET DST PORT ", $ce->get('DST_PORT') );
+                $log->debug( "set DST_PORT = " . $ce->get('DST_PORT') );
             }
         }
 
         if (   $ce->get('PROTOCOL')->equals($IP)
             || $ce->get('PROTOCOL')->equals($ICMP) )
         {
-            $logger->debug("defaulting ports for $ce");
+            $log->debug("defaulting ports for $ce");
 
             #if an icmp type is not defined, define all icmp types as -1
             if ( !$ce->has_defined('ICMP_TYPE') ) {
 
                 $ce->set( 'ICMP_TYPE', Farly::IPv4::ICMPType->new(-1) );
-                $logger->debug('SET ICMP_TYPE to -1 ');
+                $log->debug('set ICMP_TYPE to -1 ');
             }
         }
     }
@@ -104,7 +101,6 @@ sub _set_defaults {
 
 sub expand_all {
     my ($self) = @_;
-    my $logger = get_logger(__PACKAGE__);
 
     my $expanded = Farly::Object::List->new();
 
@@ -141,7 +137,6 @@ sub expand_all {
 
 sub expand {
     my ( $self, $rule, $result ) = @_;
-    my $logger = get_logger(__PACKAGE__);
 
     my $is_expanded;
     my @stack;
@@ -163,7 +158,7 @@ sub expand {
 
             my $value = $ce->get($key);
 
-            $logger->debug("entry $ce - key : $key - value : $value");
+            $log->debug("entry $ce : key = $key : value = $value");
 
             $is_expanded = 1;
 
@@ -187,7 +182,7 @@ sub expand {
 
                 $is_expanded = 0;
 
-                $logger->debug("$ce => $key isa $value");
+                $log->debug("$ce => $key isa $value");
 
                 foreach my $object ( $value->iter() ) {
 
@@ -208,8 +203,7 @@ sub expand {
 
                 if ( $value->matches($COMMENT) ) {
 
-                    $logger->debug( "skipped group comment :\n",
-                        $ce->dump(), "\n" );
+                    $log->debug( "skipped group comment :\n" . $ce->dump() . "\n" );
 
                     last;
                 }
@@ -227,8 +221,7 @@ sub expand {
                 }
                 else {
 
-                    $logger->warn( "skipped $ce property $key has no OBJECT\n",
-                        $ce->dump() );
+                    $log->warn( "skipped $ce property $key has no OBJECT\n" . $ce->dump() );
 
                     last;
                 }
@@ -262,8 +255,7 @@ sub _expand_service {
 sub _expand_vip {
     my ( $self, $key, $clone, $vip_object ) = @_;
 
-    my $logger = get_logger(__PACKAGE__);
-    $logger->debug("processing VIP : $vip_object - key : $key");
+    $log->debug("processing VIP $vip_object : key = $key");
 
     if ( $key eq 'DST_IP' ) {
         $clone->set( $key, $vip_object->get('REAL_IP') );

@@ -5,11 +5,11 @@ use strict;
 use warnings;
 use Carp;
 use Socket;
-use Log::Log4perl qw(get_logger);
+use Log::Any qw($log);
 use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 sub new {
     my ( $class, $opts ) = @_;
@@ -24,10 +24,10 @@ sub new {
         SEARCH => Farly::Object->new(),
         FILTER => Farly::Object::List->new(),
     };
-    bless( $self, $class );
 
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info("$self NEW ");
+    bless( $self, $class );
+    
+    $log->info("$self new");
 
     $self->_check_opts($opts);
 

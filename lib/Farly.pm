@@ -6,23 +6,20 @@ use warnings;
 use Carp;
 use IO::File;
 use File::Spec;
-use Log::Log4perl qw(get_logger);
+use Log::Any qw($log);
 use Farly::Director;
 use Farly::Object;
+require Time::HiRes;
 
-our $VERSION = '0.24';
-
-our ( $volume, $dir, $file ) = File::Spec->splitpath( $INC{'Farly.pm'} );
-Log::Log4perl::init( $volume . $dir . 'Farly/Log/Farly.conf' );
+our $VERSION = '0.25';
 
 sub new {
     my ( $class, $container ) = @_;
 
     my $self = { DIRECTOR => Farly::Director->new(), };
     bless $self, $class;
-
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info("$self NEW");
+    
+    $log->info("$self NEW");
 
     return $self;
 }
@@ -35,8 +32,6 @@ sub process {
     my ( $self, $type, $file_name ) = @_;
 
     croak "$file_name is not a file" unless ( -f $file_name );
-
-    my $logger = get_logger(__PACKAGE__);
 
     my $location      = "Farly/$type/Builder.pm";
     my $builder_class = 'Farly::'.$type.'::Builder';
@@ -61,9 +56,9 @@ sub process {
 
     my $elapsed = Time::HiRes::tv_interval($start);
 
-    $logger->info("parse time: $elapsed seconds");
+    $log->info("parse time: $elapsed seconds");
 
-    $logger->info( "imported ", $container->size(), " objects" );
+    $log->info( "imported " . $container->size() . " objects" );
 
     return $container;
 }
@@ -119,6 +114,23 @@ Returns Farly::Object::List<Farly::Object> firewall device model.
 Valid firewall types:
  ASA  - Cisco ASA firewall
 
+=head1 Logging
+
+Farly uses L<Log::Any> for logging. You can enable logging 
+by setting the desired L<Log::Any::Adapter> in your Farly based
+Perl script.
+
+ use Farly;
+ use Log::Any::Adapter;
+ 
+ # send all messages to STDOUT
+ Log::Any::Adapter->set("Stdout");
+
+ my $farly = Farly->new;
+
+See L<Log::Any::Adapter> for configuration details and a list of
+available adapters.
+
 =head1 AUTHOR
 
 Trystan Johnson
@@ -148,4 +160,3 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
->>>>>>> b460694554d3a18cb2a6120cba9bd88344c5b937

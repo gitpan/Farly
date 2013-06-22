@@ -4,7 +4,7 @@ use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Log::Log4perl qw(get_logger);
+use Log::Any qw($log);
 use Farly::Builder;
 use Farly::ASA::Filter;
 use Farly::ASA::Parser;
@@ -15,7 +15,7 @@ use Farly::ASA::PortFormatter;
 use Farly::ASA::ProtocolFormatter;
 use Farly::ASA::ICMPFormatter;
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 our @ISA     = 'Farly::Builder';
 
 sub new {
@@ -24,17 +24,14 @@ sub new {
     #call the constructor of the parent class
     my $self = $class->SUPER::new();
     bless $self, $class;
-
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info("$self NEW");
+    
+    $log->info("$self NEW");
 
     return $self;
 }
 
 sub run {
     my ($self) = @_;
-
-    my $logger = get_logger(__PACKAGE__);
 
     my $filter    = Farly::ASA::Filter->new();
     my $parser    = Farly::ASA::Parser->new();
@@ -70,7 +67,7 @@ sub run {
         };
         if ($@) {
             my $err = $@;
-            $logger->fatal( $self->file(), "\n $line \n $err\n" );
+            $log->fatal( $self->file() . "\n: $line \n $err\n" );
             chomp($line);
             die "Problem at line :\n$line\nError : $@";
         }

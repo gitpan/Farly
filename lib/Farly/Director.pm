@@ -4,9 +4,9 @@ use 5.008008;
 use strict;
 use warnings;
 use Carp;
-use Log::Log4perl qw(get_logger);
+use Log::Any qw($log);
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 sub new {
     my $class = shift;
@@ -17,8 +17,8 @@ sub new {
     };
     bless( $self, $class );
 
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info("$self NEW ");
+    
+    $log->info("$self NEW ");
     return $self;
 }
 
@@ -29,9 +29,8 @@ sub set_file {
       or confess "an IO::File object is required";
 
     $self->{FILE} = $file;
-
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info( "$self SET FILE TO ", $self->{FILE} );
+    
+    $log->info( "$self set FILE = " . $self->{FILE} );
 }
 
 sub file {
@@ -46,8 +45,8 @@ sub set_builder {
 
     $self->{BUILDER} = $builder;
 
-    my $logger = get_logger(__PACKAGE__);
-    $logger->info( "$self SET BUILDER TO ", $self->{BUILDER} );
+    
+    $log->info( "$self set BUILDER = " . $self->{BUILDER} );
 }
 
 sub builder {
@@ -58,7 +57,6 @@ sub run {
     my ($self) = @_;
 
     $self->builder()->set_file( $self->file() );
-
     $self->builder()->run();
     return $self->builder()->result();
 }
