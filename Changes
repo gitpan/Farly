@@ -109,3 +109,6 @@
 
  0.25 - June 2013
    - moved from Log::Log4perl to Log::Any 
+
+ 0.26 - October 2013
+   - META.yml update

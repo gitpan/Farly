@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.25';
+our $VERSION = '0.26';
 
 sub new {
     my ( $class, $type ) = @_;
@@ -86,9 +86,9 @@ Represents an 8 bit ICMP type integer as an object
 
 The constructor.
 
-   my $type = Farly::IPv4::ICMPType->new();
+   my $type = Farly::IPv4::ICMPType->new( $number );
 
-No arguments.
+An digit between -1 and 255 is required.
 
 =head2 type()
 
